@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(github-issue-creator)",
+      "Skill(github-issue-creator:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npx tsc:*)",
+      "Bash(gh issue edit:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh label list:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)",
+      "Bash(find:*)",
+      "Bash(xargs ls:*)",
+      "Skill(sagemaker-hugging-face)",
+      "Skill(sagemaker-hugging-face:*)",
+      "Bash(npm install:*)",
+      "Bash(npx vitest:*)",
+      "WebFetch(domain:www.parlant.io)",
+      "Bash(gh issue create:*)",
+      "Bash(gh label create:*)",
+      "Bash(ls -la \"c:\\\\Users\\\\l_igl\\\\Projects\\\\fluffy-cake-front\\\\src\\\\pages\"\" 2>/dev/null || ls -la \"c:Usersl_iglProjectsfluffy-cake-front \")",
+      "Bash(gh repo view:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr edit:*)",
+      "Bash(gh label:*)"
+    ]
+  }
+}
