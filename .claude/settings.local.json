@@ -25,7 +25,9 @@
       "Bash(gh repo view:*)",
       "Bash(gh pr view:*)",
       "Bash(gh pr edit:*)",
-      "Bash(gh label:*)"
+      "Bash(gh label:*)",
+      "Bash(pip install:*)",
+      "Bash(pre-commit run:*)"
     ]
   }
 }
