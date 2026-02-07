@@ -1,0 +1,25 @@
+# Docker volumes
+pgdata/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+.venv/
+
+# Tools
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# Data artifacts
+data/chunks/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

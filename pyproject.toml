@@ -1,25 +1,11 @@
-# Python Package Configuration
+# Projen managed file. Do not edit directly.
 
 [project]
-name = "package-1"
+name = "rag-kubeflow"
 version = "0.1.0"
-description = "Example Python package for Databricks"
+description = "Retriever part of a RAG"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = [
-    "pydantic-settings>=2.0.0",
-]
-
-[project.scripts]
-main = "package_1.main:main"
-
-[dependency-groups]
-dev = [
-    "pytest>=8.4.2",
-    "pytest-cov>=7.0.0",
-    "ruff>=0.14.4",
-    "mypy>=1.18.2",
-]
 
 [tool.ruff]
 line-length = 100
@@ -43,28 +29,47 @@ convention = "numpy"
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
+"tests/**/*.py" = ["D"]
 
 [tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
 strict = true
-ignore_missing_imports = true
-disallow_subclassing_any = false
-
-[tool.uv]
-package = true
-
-[tool.setuptools]
-packages = ["package_1"]
+exclude = ["tests/"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["python/*/tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = [
     "--strict-markers",
     "--strict-config",
-    "--cov=package_1",
 ]
+
+[tool.coverage.run]
+source = ["python"]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/.venv/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+]
+precision = 2
+show_missing = true
 
 [tool.numpydoc_validation]
 checks = [
@@ -72,4 +77,7 @@ checks = [
     "EX01",
     "SA01",
     "ES01",
+]
+exclude_files = [ # don't process filepaths that match these regex
+    '^exploration/*',
 ]
