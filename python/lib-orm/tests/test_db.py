@@ -2,7 +2,7 @@
 
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 
-from rag_shared.db import get_async_engine, get_async_session_factory
+from lib_orm.db import get_async_engine, get_async_session_factory
 
 
 def test_get_async_engine() -> None:

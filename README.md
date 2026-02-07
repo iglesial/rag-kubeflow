@@ -91,7 +91,8 @@ Each package under `python/` has its own `justfile` with package-specific comman
 
 | Package | Description |
 |---------|-------------|
-| `python/rag-shared` | Shared library: DB, ORM, schemas, embedding client |
+| `python/lib-embedding` | Embedding client library (sentence-transformers) |
+| `python/lib-orm` | Database connection and ORM model (async SQLAlchemy + pgvector) |
 | `python/rag-loader` | Read documents, chunk them, output JSON |
 | `python/rag-embedder` | Embed chunks (batch), insert into pgvector |
 | `python/rag-retriever` | FastAPI semantic search API |

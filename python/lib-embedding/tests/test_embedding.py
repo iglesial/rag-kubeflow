@@ -2,7 +2,7 @@
 
 import pytest
 
-from rag_shared.embedding import EmbeddingClient
+from lib_embedding.embedding import EmbeddingClient
 
 DIMENSION = 384
 
