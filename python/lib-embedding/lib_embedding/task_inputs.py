@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class TaskInputs(BaseSettings):
     """Task inputs for lib-embedding diagnostics."""
 
-    model_config = SettingsConfigDict(cli_parse_args=True)
+    model_config = SettingsConfigDict(cli_parse_args=True, cli_ignore_unknown_args=True)
 
     embedding_model: str = Field(
         default="all-MiniLM-L6-v2",
