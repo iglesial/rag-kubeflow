@@ -7,6 +7,7 @@ from fastapi import FastAPI
 
 from rag_retriever.dependencies import init_dependencies, shutdown_dependencies
 from rag_retriever.routes.health import router as health_router
+from rag_retriever.routes.search import router as search_router
 
 
 @asynccontextmanager
@@ -45,4 +46,5 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
     app.include_router(health_router)
+    app.include_router(search_router)
     return app
