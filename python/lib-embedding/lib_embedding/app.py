@@ -1,5 +1,6 @@
 """Application module for lib-embedding."""
 
+from lib_embedding.embedding import EmbeddingClient
 from lib_embedding.task_inputs import task_inputs
 
 
@@ -10,7 +11,9 @@ class App:
         """
         Run diagnostics.
 
-        Load the embedding model and print its configuration.
+        Load the embedding model and print its name and dimension.
         """
-        print(f"Embedding model: {task_inputs.embedding_model}")
-        print(f"Vector dimension: {task_inputs.vector_dim}")
+        model_name = task_inputs.embedding_model
+        print(f"Loading model: {model_name}")
+        client = EmbeddingClient(model_name)
+        print(f"Model: {model_name} ({client.dimension} dims)")

@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class TaskInputs(BaseSettings):
     """Task inputs for lib-schemas diagnostics."""
 
-    model_config = SettingsConfigDict(cli_parse_args=True)
+    model_config = SettingsConfigDict(cli_parse_args=True, cli_ignore_unknown_args=True)
 
 
 task_inputs = TaskInputs()  # type: ignore[call-arg, unused-ignore]
