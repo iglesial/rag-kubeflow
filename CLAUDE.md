@@ -12,6 +12,7 @@ RAG retrieval system built with FastAPI, PostgreSQL+pgvector, and Kubeflow Pipel
 |---------|---------|
 | `lib-embedding` | Embedding client library (sentence-transformers) |
 | `lib-orm` | Database connection and ORM model (async SQLAlchemy+asyncpg, pgvector) |
+| `lib-schemas` | Shared Pydantic schemas for data exchange (ChunkInput, SearchRequest, etc.) |
 | `rag-loader` | Read documents from disk, chunk them, output JSON |
 | `rag-embedder` | Read chunks, generate embeddings, insert into pgvector |
 | `rag-retriever` | FastAPI service: embed queries, search pgvector, return ranked results |
