@@ -26,9 +26,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     None
         Yields control to the application during its lifetime.
     """
+    print("Starting up: initializing DB engine and embedding model...")
     await init_dependencies()
+    print("Startup complete: all dependencies ready")
     yield
+    print("Shutting down: releasing resources...")
     await shutdown_dependencies()
+    print("Shutdown complete")
 
 
 def create_app() -> FastAPI:
