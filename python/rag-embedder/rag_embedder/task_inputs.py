@@ -12,6 +12,8 @@ class TaskInputs(BaseSettings):
     ----------
     input_dir : str
         Directory containing chunk JSON files to embed.
+    output_dir : str
+        Directory to save embeddings as JSON.
     db_url : str
         Database connection URL.
     embedding_model : str
@@ -25,6 +27,10 @@ class TaskInputs(BaseSettings):
     input_dir: str = Field(
         default="data/chunks",
         description="Directory containing chunk JSON files to embed",
+    )
+    output_dir: str = Field(
+        default="data/embeddings",
+        description="Directory to save embeddings as JSON",
     )
     db_url: str = Field(
         default="postgresql+asyncpg://rag:rag@localhost:5432/rag",
