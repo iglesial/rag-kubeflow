@@ -12,6 +12,8 @@ dist/
 .ruff_cache/
 .mypy_cache/
 .pytest_cache/
+.coverage
+htmlcov/
 
 # Data artifacts
 data/chunks/
