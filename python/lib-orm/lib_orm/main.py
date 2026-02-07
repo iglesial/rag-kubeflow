@@ -1,7 +1,7 @@
 # Projen managed file. Do not edit directly.
-"""Main module for package-1."""
+"""Main module for lib-orm."""
 
-from package_1.app import App
+from lib_orm.app import App
 
 
 def main() -> None:

@@ -1,17 +1,18 @@
 # Python Package Configuration
 
 [project]
-name = "package-1"
+name = "lib-embedding"
 version = "0.1.0"
-description = "Example Python package for Databricks"
+description = "Embedding client library for RAG system"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "pydantic-settings>=2.0.0",
+    "sentence-transformers>=3.0.0",
 ]
 
 [project.scripts]
-main = "package_1.main:main"
+main = "lib_embedding.main:main"
 
 [dependency-groups]
 dev = [
@@ -53,7 +54,7 @@ disallow_subclassing_any = false
 package = true
 
 [tool.setuptools]
-packages = ["package_1"]
+packages = ["lib_embedding"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -63,7 +64,7 @@ python_functions = ["test_*"]
 addopts = [
     "--strict-markers",
     "--strict-config",
-    "--cov=package_1",
+    "--cov=lib_embedding",
 ]
 
 [tool.numpydoc_validation]

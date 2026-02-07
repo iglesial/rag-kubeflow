@@ -1,7 +1,7 @@
 # Projen managed file. Do not edit directly.
-"""Main module for rag-shared."""
+"""Main module for lib-embedding."""
 
-from rag_shared.app import App
+from lib_embedding.app import App
 
 
 def main() -> None:
