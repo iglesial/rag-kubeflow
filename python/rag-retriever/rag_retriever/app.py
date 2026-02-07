@@ -1,5 +1,7 @@
 """Application module for rag-retriever."""
 
+import uvicorn
+
 from rag_retriever.task_inputs import task_inputs
 
 
@@ -18,4 +20,9 @@ class App:
         print(f"Database URL:    {task_inputs.db_url}")
         print(f"Embedding model: {task_inputs.embedding_model}")
         print(f"Default top_k:   {task_inputs.top_k}")
-        print("rag-retriever: server not yet implemented")
+        uvicorn.run(
+            "rag_retriever.api:create_app",
+            host=task_inputs.host,
+            port=task_inputs.port,
+            factory=True,
+        )
