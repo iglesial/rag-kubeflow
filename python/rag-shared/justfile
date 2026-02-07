@@ -1,0 +1,75 @@
+# Justfile for rag-shared
+# Run `just --list` to see all available commands
+
+set shell := ["cmd", "/c"]
+
+# Default recipe to display help
+default:
+    @just --list
+
+# Install dependencies (production only)
+install:
+    uv sync --no-dev
+
+# Install all dependencies (including dev)
+install-dev:
+    uv sync
+
+# Run linter with auto-fix
+lint:
+    uv run ruff check --fix
+
+# Check code without fixing
+check:
+    uv run ruff check
+
+# Format code
+format:
+    uv run ruff format
+
+# Check formatting without fixing
+format-check:
+    uv run ruff format --check
+
+# Run type checker
+typecheck:
+    uv run mypy rag_shared/
+
+# Run all checks (lint, format, typecheck)
+check-all: check format-check typecheck
+
+# Run tests
+test:
+    uv run pytest
+
+# Run tests with coverage
+test-cov:
+    uv run pytest --cov=rag_shared --cov-report=html --cov-report=term
+
+# Run tests in verbose mode
+test-verbose:
+    uv run pytest -v
+
+# Clean build artifacts
+clean:
+    rm -rf dist/ build/ *.egg-info .pytest_cache .ruff_cache .mypy_cache htmlcov/ .coverage
+
+# Build wheel package
+build:
+    uv build
+
+# Run the main entry point
+run:
+    uv run main
+
+# Run pre-commit hooks on all files
+pre-commit:
+    pre-commit run --all-files
+
+# Update dependencies
+update:
+    uv lock --upgrade
+
+# Show outdated dependencies
+outdated:
+    uv pip list --outdated
