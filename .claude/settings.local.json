@@ -36,7 +36,11 @@
       "Bash(cmd /c \"dir python\\\\* /b /ad\")",
       "Bash(cmd /c \"for /d %p in \\(python/*\\) do @echo found: %p\")",
       "Bash(powershell -NoProfile -Command \"cmd /c ''for /d %p in \\(python\\\\*\\) do @echo found: %p''\")",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(uv sync:*)",
+      "Bash(uv run ruff:*)",
+      "Bash(uv run mypy:*)",
+      "Bash(uv run pytest:*)"
     ]
   }
 }
