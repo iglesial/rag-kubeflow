@@ -1,11 +1,11 @@
-"""Task inputs module for rag-shared."""
+"""Task inputs module for lib-orm."""
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class TaskInputs(BaseSettings):
-    """Task inputs for rag-shared diagnostics."""
+    """Task inputs for lib-orm diagnostics."""
 
     model_config = SettingsConfigDict(cli_parse_args=True)
 

@@ -1,6 +1,6 @@
 """Tests for ORM models."""
 
-from rag_shared.models import Base, DocumentChunk
+from lib_orm.models import Base, DocumentChunk
 
 
 def test_tablename() -> None:
