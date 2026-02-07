@@ -28,7 +28,15 @@
       "Bash(gh label:*)",
       "Bash(pip install:*)",
       "Bash(pre-commit run:*)",
-      "Bash(docker compose:*)"
+      "Bash(docker compose:*)",
+      "Bash(dir:*)",
+      "Bash(just:*)",
+      "Bash(cmd /c \"for /d %p in \\(python\\\\*\\) do @echo found: %p\")",
+      "Bash(cmd /c \"dir python /b\")",
+      "Bash(cmd /c \"dir python\\\\* /b /ad\")",
+      "Bash(cmd /c \"for /d %p in \\(python/*\\) do @echo found: %p\")",
+      "Bash(powershell -NoProfile -Command \"cmd /c ''for /d %p in \\(python\\\\*\\) do @echo found: %p''\")",
+      "Bash(powershell:*)"
     ]
   }
 }
