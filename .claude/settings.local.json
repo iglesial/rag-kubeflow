@@ -40,7 +40,8 @@
       "Bash(uv sync:*)",
       "Bash(uv run ruff:*)",
       "Bash(uv run mypy:*)",
-      "Bash(uv run pytest:*)"
+      "Bash(uv run pytest:*)",
+      "Bash(uv run:*)"
     ]
   }
 }

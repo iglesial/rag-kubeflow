@@ -1,0 +1,13 @@
+Getting Started with Fluffy Cake
+
+Step 1: Create an account at app.fluffycake.io and set up your first workspace.
+
+Step 2: Install the Fluffy Cake CLI with pip install fluffycake. Authenticate with fc login and select your workspace.
+
+Step 3: Upload your documents using fc upload ./my-docs. Fluffy Cake will chunk and embed them automatically using the default recursive strategy and all-MiniLM-L6-v2 model.
+
+Step 4: Query your knowledge base with fc search "how does billing work". The CLI returns the top 5 matching chunks ranked by cosine similarity.
+
+Step 5: Deploy a RAG endpoint with fc deploy rag --name my-rag-app. This creates a REST API that accepts questions and returns grounded answers.
+
+For detailed documentation visit docs.fluffycake.io.
