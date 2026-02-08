@@ -21,6 +21,14 @@ infra-down:
 infra-status:
     docker compose ps
 
+# --- Docker ---
+
+# Build all Docker images
+build-images:
+    docker build -t rag-loader:latest -f python/rag-loader/Dockerfile .
+    docker build -t rag-embedder:latest -f python/rag-embedder/Dockerfile .
+    docker build -t rag-retriever:latest -f python/rag-retriever/Dockerfile .
+
 # --- Cross-package commands ---
 
 # Install all packages (dev dependencies)

@@ -1,0 +1,40 @@
+# Version control
+.git/
+.github/
+
+# IDE
+.vscode/
+.idea/
+
+# Python
+**/__pycache__/
+*.pyc
+*.pyo
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/htmlcov/
+**/.coverage
+**/*.egg-info/
+**/dist/
+**/build/
+**/tests/
+
+# Virtual environments
+**/.venv/
+
+# Infrastructure
+pgdata/
+infra/
+
+# Data
+data/
+
+# Documentation
+*.md
+
+# Claude
+.claude/
+
+# Package lock files (not needed in container, deps installed from pyproject.toml)
+# uv.lock files ARE needed for --frozen installs
