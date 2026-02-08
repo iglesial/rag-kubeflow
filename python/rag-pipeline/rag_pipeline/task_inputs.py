@@ -18,6 +18,16 @@ class TaskInputs(BaseSettings):
         URL of the Kubeflow Pipelines API.
     compile_only : bool
         If True, compile the pipeline YAML without submitting.
+    chunk_size : int
+        Maximum number of characters per chunk.
+    chunk_overlap : int
+        Number of overlapping characters between consecutive chunks.
+    db_url : str
+        Database connection URL.
+    embedding_model : str
+        Name of the sentence-transformers model.
+    batch_size : int
+        Number of chunks to embed per batch.
     """
 
     model_config = SettingsConfigDict(cli_parse_args=True, cli_ignore_unknown_args=True)
@@ -37,6 +47,26 @@ class TaskInputs(BaseSettings):
     compile_only: bool = Field(
         default=False,
         description="If True, compile the pipeline YAML without submitting",
+    )
+    chunk_size: int = Field(
+        default=512,
+        description="Maximum number of characters per chunk",
+    )
+    chunk_overlap: int = Field(
+        default=64,
+        description="Number of overlapping characters between consecutive chunks",
+    )
+    db_url: str = Field(
+        default="postgresql+asyncpg://rag:rag@localhost:5432/rag",
+        description="Database connection URL",
+    )
+    embedding_model: str = Field(
+        default="all-MiniLM-L6-v2",
+        description="Name of the sentence-transformers model",
+    )
+    batch_size: int = Field(
+        default=32,
+        description="Number of chunks to embed per batch",
     )
 
 
