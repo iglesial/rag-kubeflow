@@ -41,7 +41,9 @@
       "Bash(uv run ruff:*)",
       "Bash(uv run mypy:*)",
       "Bash(uv run pytest:*)",
-      "Bash(uv run:*)"
+      "Bash(uv run:*)",
+      "Bash(docker build:*)",
+      "Bash(docker run:*)"
     ]
   }
 }
