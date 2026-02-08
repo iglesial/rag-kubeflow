@@ -1,0 +1,170 @@
+# PIPELINE DEFINITION
+# Name: rag-ingestion
+# Description: Load, chunk, embed, and store documents
+# Inputs:
+#    batch_size: int [Default: 32.0]
+#    chunk_overlap: int [Default: 64.0]
+#    chunk_size: int [Default: 512.0]
+#    db_url: str [Default: 'postgresql+asyncpg://rag:rag@localhost:5432/rag']
+#    embedding_model: str [Default: 'all-MiniLM-L6-v2']
+#    input_dir: str [Default: 'data/documents']
+components:
+  comp-embedder-component:
+    executorLabel: exec-embedder-component
+    inputDefinitions:
+      artifacts:
+        chunks_artifact:
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
+          description: Input artifact containing chunk JSON files.
+      parameters:
+        batch_size:
+          description: Number of chunks to embed per batch.
+          parameterType: NUMBER_INTEGER
+        db_url:
+          description: Database connection URL.
+          parameterType: STRING
+        embedding_model:
+          description: Name of the sentence-transformers model.
+          parameterType: STRING
+    outputDefinitions:
+      artifacts:
+        embeddings_artifact:
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
+          description: Output artifact for embedding JSON files.
+  comp-loader-component:
+    executorLabel: exec-loader-component
+    inputDefinitions:
+      parameters:
+        chunk_overlap:
+          description: Number of overlapping characters between consecutive chunks.
+          parameterType: NUMBER_INTEGER
+        chunk_size:
+          description: Maximum number of characters per chunk.
+          parameterType: NUMBER_INTEGER
+        input_dir:
+          description: Directory containing input documents.
+          parameterType: STRING
+    outputDefinitions:
+      artifacts:
+        chunks_artifact:
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
+          description: Output artifact for chunk JSON files.
+deploymentSpec:
+  executors:
+    exec-embedder-component:
+      container:
+        args:
+        - --input_dir
+        - '{{$.inputs.artifacts[''chunks_artifact''].path}}'
+        - --output_dir
+        - '{{$.outputs.artifacts[''embeddings_artifact''].path}}'
+        - --db_url
+        - '{{$.inputs.parameters[''db_url'']}}'
+        - --embedding_model
+        - '{{$.inputs.parameters[''embedding_model'']}}'
+        - --batch_size
+        - '{{$.inputs.parameters[''batch_size'']}}'
+        command:
+        - python
+        - -m
+        - rag_embedder.main
+        image: rag-embedder:latest
+    exec-loader-component:
+      container:
+        args:
+        - --input_dir
+        - '{{$.inputs.parameters[''input_dir'']}}'
+        - --output_dir
+        - '{{$.outputs.artifacts[''chunks_artifact''].path}}'
+        - --chunk_size
+        - '{{$.inputs.parameters[''chunk_size'']}}'
+        - --chunk_overlap
+        - '{{$.inputs.parameters[''chunk_overlap'']}}'
+        command:
+        - python
+        - -m
+        - rag_loader.main
+        image: rag-loader:latest
+pipelineInfo:
+  description: Load, chunk, embed, and store documents
+  name: rag-ingestion
+root:
+  dag:
+    tasks:
+      embedder-component:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-embedder-component
+        dependentTasks:
+        - loader-component
+        inputs:
+          artifacts:
+            chunks_artifact:
+              taskOutputArtifact:
+                outputArtifactKey: chunks_artifact
+                producerTask: loader-component
+          parameters:
+            batch_size:
+              componentInputParameter: batch_size
+            db_url:
+              componentInputParameter: db_url
+            embedding_model:
+              componentInputParameter: embedding_model
+        taskInfo:
+          name: embedder-component
+      loader-component:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-loader-component
+        inputs:
+          parameters:
+            chunk_overlap:
+              componentInputParameter: chunk_overlap
+            chunk_size:
+              componentInputParameter: chunk_size
+            input_dir:
+              componentInputParameter: input_dir
+        taskInfo:
+          name: loader-component
+  inputDefinitions:
+    parameters:
+      batch_size:
+        defaultValue: 32.0
+        description: Number of chunks to embed per batch.
+        isOptional: true
+        parameterType: NUMBER_INTEGER
+      chunk_overlap:
+        defaultValue: 64.0
+        description: Number of overlapping characters between consecutive chunks.
+        isOptional: true
+        parameterType: NUMBER_INTEGER
+      chunk_size:
+        defaultValue: 512.0
+        description: Maximum number of characters per chunk.
+        isOptional: true
+        parameterType: NUMBER_INTEGER
+      db_url:
+        defaultValue: postgresql+asyncpg://rag:rag@localhost:5432/rag
+        description: Database connection URL.
+        isOptional: true
+        parameterType: STRING
+      embedding_model:
+        defaultValue: all-MiniLM-L6-v2
+        description: Name of the sentence-transformers model.
+        isOptional: true
+        parameterType: STRING
+      input_dir:
+        defaultValue: data/documents
+        description: Directory containing input documents.
+        isOptional: true
+        parameterType: STRING
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.15.2
