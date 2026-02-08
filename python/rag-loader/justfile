@@ -58,6 +58,10 @@ clean:
 build:
     uv build
 
+# Build Docker image (run from repo root)
+docker-build:
+    docker build -t rag-loader:latest -f python/rag-loader/Dockerfile ..\..
+
 # Run the main entry point
 run:
     uv run main
