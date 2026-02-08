@@ -26,7 +26,7 @@ infra-up:
     @Write-Host "Deploying KFP platform-agnostic environment..." -ForegroundColor Cyan
     kubectl apply -k "github.com/kubeflow/pipelines/manifests/kustomize/env/platform-agnostic?ref={{KFP_VERSION}}"
     @Write-Host "Waiting for KFP pods to be ready (this may take several minutes)..." -ForegroundColor Cyan
-    kubectl wait pods -l application-crd-id=kubeflow-pipelines -n kubeflow --for condition=Ready --timeout=600s
+    kubectl wait pods -l application-crd-id=kubeflow-pipelines -n kubeflow --for condition=Ready --timeout=1800s
     @Write-Host "Loading pipeline images into Kind..." -ForegroundColor Cyan
     kind load docker-image rag-loader:local --name {{KIND_CLUSTER}}
     kind load docker-image rag-embedder:local --name {{KIND_CLUSTER}}
@@ -103,6 +103,13 @@ serve:
 # Query the RAG retriever with a question
 query question:
     Invoke-RestMethod -Method Post -Uri "http://localhost:8000/search" -ContentType "application/json" -Body (@{query="{{question}}"; top_k=5} | ConvertTo-Json)
+
+# --- Testing ---
+
+# Run end-to-end integration test (requires PostgreSQL via docker compose)
+e2e:
+    @Write-Host "Running end-to-end pipeline test..." -ForegroundColor Cyan
+    Push-Location python/rag-retriever; uv run pytest ../../tests/e2e/ -v --no-cov --tb=short; Pop-Location
 
 # --- Cross-package commands ---
 
