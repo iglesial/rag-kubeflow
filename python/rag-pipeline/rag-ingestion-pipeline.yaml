@@ -74,7 +74,7 @@ deploymentSpec:
         - python
         - -m
         - rag_embedder.main
-        image: rag-embedder:latest
+        image: rag-embedder:local
     exec-loader-component:
       container:
         args:
@@ -90,7 +90,7 @@ deploymentSpec:
         - python
         - -m
         - rag_loader.main
-        image: rag-loader:latest
+        image: rag-loader:local
 pipelineInfo:
   description: Load, chunk, embed, and store documents
   name: rag-ingestion

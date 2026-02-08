@@ -2,7 +2,7 @@
 
 from kfp import dsl
 
-LOADER_IMAGE = "rag-loader:latest"
+LOADER_IMAGE = "rag-loader:local"
 
 
 @dsl.container_component  # type: ignore[untyped-decorator]

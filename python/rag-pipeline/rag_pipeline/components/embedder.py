@@ -2,7 +2,7 @@
 
 from kfp import dsl
 
-EMBEDDER_IMAGE = "rag-embedder:latest"
+EMBEDDER_IMAGE = "rag-embedder:local"
 
 
 @dsl.container_component  # type: ignore[untyped-decorator]
