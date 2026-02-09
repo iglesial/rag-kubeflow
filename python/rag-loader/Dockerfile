@@ -22,6 +22,9 @@ COPY --from=builder /app/python/rag-loader/.venv /app/python/rag-loader/.venv
 COPY --from=builder /app/python/rag-loader/rag_loader /app/python/rag-loader/rag_loader
 COPY --from=builder /app/python/lib-schemas/lib_schemas /app/python/lib-schemas/lib_schemas
 
+# Copy sample documents for local Kind deployment
+COPY data/documents/ /data/documents/
+
 ENV PATH="/app/python/rag-loader/.venv/bin:$PATH"
 
 ENTRYPOINT ["python", "-m", "rag_loader.main"]

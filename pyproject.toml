@@ -80,4 +80,6 @@ checks = [
 ]
 exclude_files = [ # don't process filepaths that match these regex
     '^exploration/*',
+    '^tests/',
+    '.*/tests/',
 ]

@@ -5,9 +5,9 @@
 #    batch_size: int [Default: 32.0]
 #    chunk_overlap: int [Default: 64.0]
 #    chunk_size: int [Default: 512.0]
-#    db_url: str [Default: 'postgresql+asyncpg://rag:rag@localhost:5432/rag']
+#    db_url: str [Default: 'postgresql+asyncpg://rag:rag@host.docker.internal:5432/rag']
 #    embedding_model: str [Default: 'all-MiniLM-L6-v2']
-#    input_dir: str [Default: 'data/documents']
+#    input_dir: str [Default: '/data/documents']
 components:
   comp-embedder-component:
     executorLabel: exec-embedder-component
@@ -74,7 +74,7 @@ deploymentSpec:
         - python
         - -m
         - rag_embedder.main
-        image: rag-embedder:latest
+        image: rag-embedder:local
     exec-loader-component:
       container:
         args:
@@ -90,7 +90,7 @@ deploymentSpec:
         - python
         - -m
         - rag_loader.main
-        image: rag-loader:latest
+        image: rag-loader:local
 pipelineInfo:
   description: Load, chunk, embed, and store documents
   name: rag-ingestion
@@ -152,7 +152,7 @@ root:
         isOptional: true
         parameterType: NUMBER_INTEGER
       db_url:
-        defaultValue: postgresql+asyncpg://rag:rag@localhost:5432/rag
+        defaultValue: postgresql+asyncpg://rag:rag@host.docker.internal:5432/rag
         description: Database connection URL.
         isOptional: true
         parameterType: STRING
@@ -162,8 +162,8 @@ root:
         isOptional: true
         parameterType: STRING
       input_dir:
-        defaultValue: data/documents
-        description: Directory containing input documents.
+        defaultValue: /data/documents
+        description: Directory containing input documents (baked into the loader image).
         isOptional: true
         parameterType: STRING
 schemaVersion: 2.1.0

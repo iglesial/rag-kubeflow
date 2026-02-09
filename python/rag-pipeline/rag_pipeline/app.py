@@ -43,6 +43,11 @@ class App:
             from kfp.client import Client
 
             client = Client(host=task_inputs.kubeflow_host)
+            pipeline = client.upload_pipeline(
+                pipeline_package_path=PIPELINE_YAML,
+                pipeline_name=task_inputs.pipeline_name,
+            )
+            print(f"Registered pipeline: {pipeline.pipeline_id}")
             run = client.create_run_from_pipeline_package(
                 PIPELINE_YAML,
                 arguments={
