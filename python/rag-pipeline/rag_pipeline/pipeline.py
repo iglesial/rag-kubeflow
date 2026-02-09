@@ -8,10 +8,10 @@ from rag_pipeline.components.loader import loader_component
 
 @dsl.pipeline(name="rag-ingestion", description="Load, chunk, embed, and store documents")  # type: ignore[untyped-decorator]
 def rag_ingestion_pipeline(
-    input_dir: str = "data/documents",
+    input_dir: str = "/data/documents",
     chunk_size: int = 512,
     chunk_overlap: int = 64,
-    db_url: str = "postgresql+asyncpg://rag:rag@localhost:5432/rag",
+    db_url: str = "postgresql+asyncpg://rag:rag@host.docker.internal:5432/rag",
     embedding_model: str = "all-MiniLM-L6-v2",
     batch_size: int = 32,
 ) -> None:
@@ -24,7 +24,7 @@ def rag_ingestion_pipeline(
     Parameters
     ----------
     input_dir : str
-        Directory containing input documents.
+        Directory containing input documents (baked into the loader image).
     chunk_size : int
         Maximum number of characters per chunk.
     chunk_overlap : int

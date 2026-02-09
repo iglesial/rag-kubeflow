@@ -27,8 +27,8 @@
 pgdata/
 infra/
 
-# Data
-data/
+# Data (keep data/documents/ for loader image)
+data/raw/
 
 # Documentation
 *.md
