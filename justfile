@@ -4,7 +4,7 @@
 set shell := ["powershell", "-NoProfile", "-Command"]
 
 # KFP manifest version for standalone deployment
-KFP_VERSION := "2.3.0"
+KFP_VERSION := "2.16.0"
 # Kind cluster name
 KIND_CLUSTER := "rag-kubeflow"
 
@@ -14,8 +14,20 @@ default:
 
 # --- Infrastructure ---
 
+# Start Docker Desktop (waits until daemon is ready)
+docker-start:
+    @if (-not (Get-Process "Docker Desktop" -ErrorAction SilentlyContinue)) { \
+        Write-Host "Starting Docker Desktop..." -ForegroundColor Cyan; \
+        Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe"; \
+    } else { \
+        Write-Host "Docker Desktop already running." -ForegroundColor Green; \
+    }
+    @Write-Host "Waiting for Docker daemon..." -ForegroundColor Yellow
+    @while (-not (docker info 2>$null)) { Start-Sleep -Seconds 2 }
+    @Write-Host "Docker is ready." -ForegroundColor Green
+
 # Start all infrastructure: PostgreSQL, Kind cluster, KFP, load images
-infra-up:
+infra-up: docker-start
     @Write-Host "Starting PostgreSQL..." -ForegroundColor Cyan
     docker compose up -d
     @Write-Host "Creating Kind cluster '{{KIND_CLUSTER}}'..." -ForegroundColor Cyan
@@ -92,6 +104,26 @@ build-images:
     docker build -t rag-loader:latest -t rag-loader:local -f python/rag-loader/Dockerfile .
     docker build -t rag-embedder:latest -t rag-embedder:local -f python/rag-embedder/Dockerfile .
     docker build -t rag-retriever:latest -f python/rag-retriever/Dockerfile .
+
+# --- RAG Pipeline (local) ---
+
+# Run the loader (chunk documents → JSON)
+load:
+    @Write-Host "Running rag-loader..." -ForegroundColor Cyan
+    Push-Location python/rag-loader; uv run main --input-dir ../../data/documents; Pop-Location
+
+# Run the embedder (embed chunks → pgvector)
+embed:
+    @Write-Host "Running rag-embedder..." -ForegroundColor Cyan
+    Push-Location python/rag-embedder; uv run main; Pop-Location
+
+# Run the full local pipeline: loader then embedder
+pipeline: load embed
+
+# Submit the pipeline to KFP (requires 'just kfp-ui' running in another terminal)
+kfp-submit:
+    @Write-Host "Submitting pipeline to KFP..." -ForegroundColor Cyan
+    Push-Location python/rag-pipeline; uv run main; Pop-Location
 
 # --- RAG Retriever ---
 
