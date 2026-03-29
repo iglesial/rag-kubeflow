@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Session 2 — Embedding et API</title>
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@5/dist/reset.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@5/dist/reveal.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@5/dist/theme/moon.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@5/plugin/highlight/monokai.css">
+  <style>
+    .reveal pre code {
+      max-height: 500px;
+      font-size: 0.45em;
+      line-height: 1.4;
+    }
+    .reveal table {
+      font-size: 0.6em;
+    }
+    .reveal table th,
+    .reveal table td {
+      border: 1px solid #555;
+      padding: 0.3em 0.6em;
+    }
+    .reveal table thead th {
+      border-bottom: 2px solid #888;
+    }
+    .reveal li {
+      font-size: 0.75em;
+    }
+    .task-title {
+      color: #4fc3f7 !important;
+    }
+    .reveal h2 {
+      font-size: 1.4em;
+    }
+    .reveal h3 {
+      font-size: 1.1em;
+    }
+    .reveal p {
+      font-size: 0.75em;
+    }
+    .reveal .small {
+      font-size: 0.6em;
+    }
+    .hint-title {
+      color: #ffd54f;
+      font-size: 0.9em;
+    }
+    .reveal blockquote {
+      font-size: 0.75em;
+      width: 90%;
+    }
+    .checklist li {
+      list-style: none;
+      font-size: 0.65em;
+    }
+    .checklist li::before {
+      content: "\2610\0020";
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- ===== TITLE SLIDE ===== -->
+      <section>
+        <h1 style="font-size:1.6em;">Session 2 — Embedding et API</h1>
+        <p style="font-size:0.85em;">Embedder et Retriever : du texte aux vecteurs, des vecteurs à l'API</p>
+      </section>
+
+      <!-- ===== PLANNING ===== -->
+      <section>
+        <h2>Planning</h2>
+        <table>
+          <thead>
+            <tr><th>Horaire</th><th>Activit&eacute;</th><th>Type</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>0:00-0:30</td><td>R&eacute;capitulatif Session 1, crash course pgvector</td><td>Cours</td></tr>
+            <tr><td>0:30-2:15</td><td>Epic 4 : impl&eacute;mentation de rag-embedder</td><td>Hands-on</td></tr>
+            <tr><td>2:15-2:30</td><td>Pause</td><td></td></tr>
+            <tr><td>2:30-3:00</td><td>D&eacute;mo : FastAPI patterns, injection de d&eacute;pendances</td><td>Cours</td></tr>
+            <tr><td>3:00-5:00</td><td>Epic 5 : impl&eacute;mentation de rag-retriever</td><td>Hands-on</td></tr>
+            <tr><td>5:00-5:15</td><td>Pause</td><td></td></tr>
+            <tr><td>5:15-6:00</td><td>Wire uvicorn, <code>just serve</code> + <code>just query</code></td><td>Hands-on</td></tr>
+            <tr><td>6:00-6:30</td><td>Pipeline locale compl&egrave;te : <code>just pipeline &amp;&amp; just serve</code></td><td>D&eacute;mo</td></tr>
+            <tr><td>6:30-7:00</td><td><code>just test-all</code> + <code>just check-all</code>, correction</td><td>Hands-on</td></tr>
+          </tbody>
+        </table>
+        <p><strong>Livrable</strong> : le syst&egrave;me RAG fonctionne en local. <code>just query "qu'est-ce que le MLOps ?"</code> retourne des r&eacute;sultats class&eacute;s par similarit&eacute;.</p>
+      </section>
+
+      <!-- ===== CRASH COURSE PGVECTOR ===== -->
+      <section>
+        <h2>Crash course pgvector</h2>
+        <p><em>Cours, ~15 min</em></p>
+        <p>Concepts cl&eacute;s &agrave; comprendre avant de coder :</p>
+        <ul>
+          <li><strong>Embedding</strong> : repr&eacute;sentation d'un texte sous forme de vecteur de 384 nombres flottants</li>
+          <li><strong>pgvector</strong> : extension PostgreSQL qui ajoute le type <code>vector(384)</code> et l'op&eacute;rateur <code>&lt;=&gt;</code> (distance cosinus)</li>
+          <li><strong>Similarit&eacute; cosinus</strong> : <code>1 - distance</code>. Plus le score est proche de 1, plus les textes sont similaires</li>
+          <li><strong>IVFFlat</strong> : index approximatif pour acc&eacute;l&eacute;rer les recherches (pas exact, mais rapide)</li>
+          <li><strong>Upsert</strong> : <code>INSERT ... ON CONFLICT DO UPDATE</code> — &eacute;vite les doublons</li>
+        </ul>
+      </section>
+
+      <!-- ===== PGVECTOR SCHEMA ===== -->
+      <section>
+        <h2>Crash course pgvector — Sch&eacute;ma</h2>
+        <p>Sch&eacute;ma de la table (voir <code>infra/init.sql</code>) :</p>
+        <pre><code class="language-sql" data-trim>
+CREATE TABLE document_chunks (
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    document_name VARCHAR(512) NOT NULL,
+    chunk_index   INTEGER NOT NULL,
+    content       TEXT NOT NULL,
+    metadata      JSONB NOT NULL DEFAULT '{}',
+    embedding     vector(384) NOT NULL,
+    created_at    TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    CONSTRAINT uq_document_chunk UNIQUE (document_name, chunk_index)
+);
+        </code></pre>
+      </section>
+
+      <!-- ===== EPIC 4 HEADER ===== -->
+      <section>
+        <h2>Epic 4 — Embedder</h2>
+        <p><em>Hands-on, ~1h45</em></p>
+      </section>
+
+      <!-- ===== TACHE 4.1 ===== -->
+      <section>
+        <section>
+          <h3 class="task-title">T&acirc;che 4.1 : Comprendre la structure du package</h3>
+          <pre><code class="language-text" data-trim>
+python/rag-embedder/
+├── rag_embedder/
+│   ├── __init__.py       # fourni
+│   ├── main.py           # fourni (projen)
+│   ├── task_inputs.py    # fourni
+│   ├── app.py            # À IMPLÉMENTER
+│   └── writer.py         # À IMPLÉMENTER
+├── tests/                # fournis
+├── pyproject.toml        # fourni
+├── justfile              # fourni
+└── uv.lock               # fourni
+          </code></pre>
+          <pre><code class="language-bash" data-trim>
+cd python/rag-embedder && just install-dev
+just test   # voir ce qui échoue
+          </code></pre>
+          <p><strong>TaskInputs fournis</strong> : <code>input_dir</code> (data/chunks), <code>output_dir</code> (data/embeddings), <code>db_url</code>, <code>embedding_model</code> (all-MiniLM-L6-v2), <code>batch_size</code> (32).</p>
+        </section>
+      </section>
+
+      <!-- ===== TACHE 4.2 ===== -->
+      <section>
+        <section>
+          <h3 class="task-title">T&acirc;che 4.2 : Impl&eacute;menter le writer (batch upsert)</h3>
+          <p><strong>Fichier</strong> : <code>python/rag-embedder/rag_embedder/writer.py</code></p>
+          <p><strong>Fonction &agrave; impl&eacute;menter</strong> :</p>
+          <pre><code class="language-python" data-trim>
+async def write_chunks(session: AsyncSession, chunks: list[ChunkWithEmbedding]) -> int:
+          </code></pre>
+          <p><strong>Comportement attendu</strong> :</p>
+          <ol>
+            <li>Retourner <code>0</code> si la liste est vide</li>
+            <li>Pour chaque chunk, chercher un <code>DocumentChunk</code> existant par <code>(document_name, chunk_index)</code></li>
+            <li>Si trouv&eacute; : mettre &agrave; jour <code>content</code>, <code>metadata_</code> et <code>embedding</code></li>
+            <li>Si non trouv&eacute; : cr&eacute;er un nouveau <code>DocumentChunk</code> et l'ajouter &agrave; la session</li>
+            <li>Appeler <code>session.flush()</code> &agrave; la fin</li>
+            <li>Retourner le nombre total de lignes affect&eacute;es</li>
+          </ol>
+        </section>
+
+        <!-- 4.2 suite : imports + vérification -->
+        <section>
+          <h3 class="task-title">T&acirc;che 4.2 — Imports &amp; v&eacute;rification</h3>
+          <p><strong>Imports n&eacute;cessaires</strong> :</p>
+          <pre><code class="language-python" data-trim>
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from lib_orm.models import DocumentChunk
+from lib_schemas.schemas import ChunkWithEmbedding
+          </code></pre>
+          <p><strong>V&eacute;rification</strong> :</p>
+          <pre><code class="language-bash" data-trim>
+just test -- -k test_writer   # 5 tests doivent passer
+          </code></pre>
+        </section>
+
+        <!-- 4.2 Indice 1 -->
+        <section>
+          <h3 class="hint-title">Indice 1 : recherche d'un chunk existant</h3>
+          <pre><code class="language-python" data-trim>
+stmt = select(DocumentChunk).where(
+    DocumentChunk.document_name == chunk.document_name,
+    DocumentChunk.chunk_index == chunk.chunk_index,
+)
+result = await session.execute(stmt)
+existing = result.scalar_one_or_none()
+          </code></pre>
+        </section>
+
+        <!-- 4.2 Indice 2 -->
+        <section>
+          <h3 class="hint-title">Indice 2 : cr&eacute;ation d'un nouveau DocumentChunk</h3>
+          <pre><code class="language-python" data-trim>
+row = DocumentChunk(
+    document_name=chunk.document_name,
+    chunk_index=chunk.chunk_index,
+    content=chunk.content,
+    metadata_=chunk.metadata,
+    embedding=chunk.embedding,
+)
+session.add(row)
+          </code></pre>
+        </section>
+      </section>
+
+      <!-- ===== TACHE 4.3 ===== -->
+      <section>
+        <section>
+          <h3 class="task-title">T&acirc;che 4.3 : Impl&eacute;menter App.run()</h3>
+          <p><strong>Fichier</strong> : <code>python/rag-embedder/rag_embedder/app.py</code></p>
+          <p><strong>M&eacute;thode &agrave; impl&eacute;menter</strong> : <code>App.run(self) -&gt; None</code></p>
+          <p><strong>Comportement attendu</strong> :</p>
+          <ol>
+            <li>Afficher la configuration de <code>task_inputs</code></li>
+            <li>Charger les chunks depuis les fichiers JSON dans <code>input_dir</code> (<code>Path.glob("*.json")</code>)</li>
+            <li>Valider les chunks comme liste de <code>ChunkInput</code></li>
+            <li>Cr&eacute;er un <code>EmbeddingClient(task_inputs.embedding_model)</code> et encoder les textes</li>
+            <li>Construire des objets <code>ChunkWithEmbedding</code> avec les embeddings</li>
+            <li>Sauvegarder en JSON dans <code>output_dir/embeddings.json</code></li>
+            <li>&Eacute;crire dans la base de donn&eacute;es via <code>_write_to_db()</code> (m&eacute;thode statique async, appel&eacute;e via <code>asyncio.run()</code>)</li>
+          </ol>
+        </section>
+
+        <!-- 4.3 suite : _write_to_db -->
+        <section>
+          <h3 class="task-title">T&acirc;che 4.3 — M&eacute;thode statique <code>_write_to_db</code></h3>
+          <p><strong>M&eacute;thode statique <code>_write_to_db</code></strong> :</p>
+          <ol>
+            <li>Obtenir une session async via <code>get_async_session(task_inputs.db_url)</code></li>
+            <li>Appeler <code>write_chunks(session, results)</code></li>
+            <li>G&eacute;rer les erreurs de connexion gracieusement (print, pas crash)</li>
+          </ol>
+        </section>
+
+        <!-- 4.3 suite : imports + vérification -->
+        <section>
+          <h3 class="task-title">T&acirc;che 4.3 — Imports &amp; v&eacute;rification</h3>
+          <p><strong>Imports n&eacute;cessaires</strong> :</p>
+          <pre><code class="language-python" data-trim>
+import asyncio
+import json
+from pathlib import Path
+from lib_embedding.embedding import EmbeddingClient
+from lib_orm.db import get_async_session
+from lib_schemas.schemas import ChunkInput, ChunkWithEmbedding
+from rag_embedder.task_inputs import task_inputs
+from rag_embedder.writer import write_chunks
+          </code></pre>
+          <p><strong>V&eacute;rification</strong> :</p>
+          <pre><code class="language-bash" data-trim>
+just test -- -k test_app   # 3 tests doivent passer
+just test                   # TOUS les tests
+just check-all              # ruff + mypy clean
+          </code></pre>
+        </section>
+
+        <!-- 4.3 Indice -->
+        <section>
+          <h3 class="hint-title">Indice : chargement des chunks JSON</h3>
+          <pre><code class="language-python" data-trim>
+all_chunks: list[ChunkInput] = []
+for json_file in Path(task_inputs.input_dir).glob("*.json"):
+    data = json.loads(json_file.read_text())
+    all_chunks.extend([ChunkInput(**item) for item in data])
+          </code></pre>
+        </section>
+      </section>
+
+      <!-- ===== TACHE 4.4 ===== -->
+      <section>
+        <section>
+          <h3 class="task-title">T&acirc;che 4.4 : Ex&eacute;cuter l'embedder</h3>
+          <p>Assurez-vous que PostgreSQL tourne et que les chunks existent :</p>
+          <pre><code class="language-bash" data-trim>
+# Depuis la racine
+just load     # produit data/chunks/chunks.json
+just embed    # lit les chunks, génère les embeddings, écrit dans pgvector
+          </code></pre>
+          <p>V&eacute;rifier dans la base :</p>
+          <pre><code class="language-bash" data-trim>
+docker exec -it rag-postgres psql -U rag -d rag \
+  -c "SELECT count(*) FROM document_chunks;"
+          </code></pre>
+        </section>
+      </section>
+
+      <!-- ===== EPIC 5 HEADER ===== -->
+      <section>
+        <h2>Epic 5 — Retriever API</h2>
+        <p><em>Hands-on, ~2h30</em></p>
+      </section>
+
+      <!-- ===== TACHE 5.1 ===== -->
+      <section>
+        <section>
+          <h3 class="task-title">T&acirc;che 5.1 : Comprendre la structure du package</h3>
+          <pre><code class="language-text" data-trim>
+python/rag-retriever/
+├── rag_retriever/
+│   ├── __init__.py          # fourni
+│   ├── main.py              # fourni (projen)
+│   ├── task_inputs.py       # fourni
+│   ├── app.py               # À IMPLÉMENTER
+│   ├── api.py               # À IMPLÉMENTER
+│   ├── dependencies.py      # À IMPLÉMENTER
+│   └── routes/
+│       ├── __init__.py      # fourni
+│       ├── health.py        # À IMPLÉMENTER
+│       ├── search.py        # À IMPLÉMENTER
+│       └── documents.py     # À IMPLÉMENTER
+├── tests/                   # fournis
+├── pyproject.toml           # fourni
+├── justfile                 # fourni
+└── uv.lock                  # fourni
+          </code></pre>
+          <pre><code class="language-bash" data-trim>
+cd python/rag-retriever && just install-dev
+just test   # voir ce qui échoue
+          </code></pre>
+          <p><strong>TaskInputs fournis</strong> : <code>host</code> (0.0.0.0), <code>port</code> (8000), <code>db_url</code>, <code>embedding_model</code>, <code>top_k</code> (5).</p>
+        </section>
+      </section>
+
+      <!-- ===== TACHE 5.2 ===== -->
+      <section>
+        <section>
+          <h3 class="task-title">T&acirc;che 5.2 : Impl&eacute;menter les d&eacute;pendances (DI)</h3>
+          <p><strong>Fichier</strong> : <code>python/rag-retriever/rag_retriever/dependencies.py</code></p>
+          <p>Ce module g&egrave;re les ressources partag&eacute;es (engine DB + client embedding) comme singletons.</p>
+          <p><strong>Variables globales</strong> :</p>
+          <pre><code class="language-python" data-trim>
+_engine: AsyncEngine | None = None
+_embedding_client: EmbeddingClient | None = None
+          </code></pre>
+        </section>
+
+        <!-- 5.2 suite : fonctions -->
+        <section>
+          <h3 class="task-title">T&acirc;che 5.2 — Fonctions &agrave; impl&eacute;menter</h3>
+          <table>
+            <thead>
+              <tr><th>Fonction</th><th>R&ocirc;le</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>async init_dependencies()</code></td><td>Initialise <code>_engine</code> et <code>_embedding_client</code></td></tr>
+              <tr><td><code>async shutdown_dependencies()</code></td><td>Dispose <code>_engine</code>, remet les globals &agrave; <code>None</code></td></tr>
+              <tr><td><code>async get_db_session()</code></td><td>G&eacute;n&eacute;rateur async qui yield une <code>AsyncSession</code> (commit/rollback)</td></tr>
+              <tr><td><code>get_embedding_client()</code></td><td>Retourne le client, <code>RuntimeError</code> si non initialis&eacute;</td></tr>
+              <tr><td><code>async check_db_health()</code></td><td>Ex&eacute;cute <code>SELECT 1</code>, retourne <code>bool</code></td></tr>
+              <tr><td><code>check_model_health()</code></td><td>Retourne <code>True</code> si le client existe</td></tr>
+            </tbody>
+          </table>
+          <p><strong>V&eacute;rification</strong> :</p>
+          <pre><code class="language-bash" data-trim>
+just test -- -k test_dependencies   # 7 tests doivent passer
+          </code></pre>
+        </section>
+
+        <!-- 5.2 Indice 1 -->
+        <section>
+          <h3 class="hint-title">Indice : init_dependencies</h3>
+          <pre><code class="language-python" data-trim>
+async def init_dependencies() -> None:
+    global _engine, _embedding_client
+    _engine = get_async_engine(task_inputs.db_url)
+    _embedding_client = EmbeddingClient(task_inputs.embedding_model)
+          </code></pre>
+        </section>
+
+        <!-- 5.2 Indice 2 -->
+        <section>
+          <h3 class="hint-title">Indice : get_db_session (g&eacute;n&eacute;rateur async)</h3>
+          <pre><code class="language-python" data-trim>
+async def get_db_session() -> AsyncGenerator[AsyncSession]:
+    if _engine is None:
+        raise RuntimeError("Database engine not initialized")
+    async with AsyncSession(_engine) as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+          </code></pre>
+        </section>
+      </section>
+
+      <!-- ===== TACHE 5.3 ===== -->
+      <section>
+        <section>
+          <h3 class="task-title">T&acirc;che 5.3 : Impl&eacute;menter les endpoints de sant&eacute;</h3>
+          <p><strong>Fichier</strong> : <code>python/rag-retriever/rag_retriever/routes/health.py</code></p>
+          <table>
+            <thead>
+              <tr><th>M&eacute;thode</th><th>Route</th><th>R&eacute;ponse</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>GET</td><td><code>/health</code></td><td><code>{"status": "ok"}</code> — toujours 200</td></tr>
+              <tr><td>GET</td><td><code>/ready</code></td><td>V&eacute;rifie DB + mod&egrave;le. 200 si tout OK, 503 sinon</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- 5.3 suite : réponses /ready -->
+        <section>
+          <h3 class="task-title">T&acirc;che 5.3 — R&eacute;ponses <code>/ready</code></h3>
+          <p><code>/ready</code> retourne :</p>
+          <pre><code class="language-json" data-trim>
+{"status": "ready", "db": true, "model": true}
+          </code></pre>
+          <p>ou (avec status code 503) :</p>
+          <pre><code class="language-json" data-trim>
+{"status": "not_ready", "db": false, "model": true}
+          </code></pre>
+          <p><strong>V&eacute;rification</strong> :</p>
+          <pre><code class="language-bash" data-trim>
+just test -- -k test_health   # 4 tests doivent passer
+          </code></pre>
+        </section>
+      </section>
+
+      <!-- ===== TACHE 5.4 ===== -->
+      <section>
+        <section>
+          <h3 class="task-title">T&acirc;che 5.4 : Impl&eacute;menter POST /search</h3>
+          <p><strong>Fichier</strong> : <code>python/rag-retriever/rag_retriever/routes/search.py</code></p>
+          <p>C'est l'endpoint principal du syst&egrave;me RAG.</p>
+          <p><strong>Signature</strong> :</p>
+          <pre><code class="language-python" data-trim>
+@router.post("/search", response_model=SearchResponse)
+async def search(
+    body: SearchRequest,
+    session: AsyncSession = Depends(get_db_session),
+    client: EmbeddingClient = Depends(get_embedding_client),
+) -> SearchResponse:
+          </code></pre>
+        </section>
+
+        <!-- 5.4 suite : algorithme -->
+        <section>
+          <h3 class="task-title">T&acirc;che 5.4 — Algorithme</h3>
+          <ol>
+            <li>Encoder la query avec <code>client.encode([body.query])</code> &rarr; vecteur 384-dim</li>
+            <li>Mesurer le temps d'embedding (en ms)</li>
+            <li>Construire la requ&ecirc;te SQL pgvector :
+              <ul>
+                <li><code>1 - (embedding &lt;=&gt; query_embedding)</code> comme score de similarit&eacute;</li>
+                <li>Filtrer par <code>similarity &gt;= body.similarity_threshold</code></li>
+                <li>Trier par similarit&eacute; d&eacute;croissante</li>
+                <li>Limiter &agrave; <code>body.top_k</code></li>
+              </ul>
+            </li>
+            <li>Mesurer le temps de recherche (en ms)</li>
+            <li>Construire les <code>SearchResult</code> et retourner <code>SearchResponse</code></li>
+          </ol>
+          <p><strong>V&eacute;rification</strong> :</p>
+          <pre><code class="language-bash" data-trim>
+just test -- -k test_search   # 5 tests doivent passer
+          </code></pre>
+        </section>
+
+        <!-- 5.4 Indice -->
+        <section>
+          <h3 class="hint-title">Indice : requ&ecirc;te pgvector avec SQLAlchemy</h3>
+          <pre><code class="language-python" data-trim>
+import time
+from sqlalchemy import select, literal_column
+
+query_vector = client.encode([body.query])[0]
+similarity = (
+    literal_column("1") - DocumentChunk.embedding.cosine_distance(query_vector)
+).label("similarity_score")
+
+stmt = (
+    select(DocumentChunk, similarity)
+    .where(similarity >= body.similarity_threshold)
+    .order_by(similarity.desc())
+    .limit(body.top_k)
+)
+
+start = time.perf_counter()
+result = await session.execute(stmt)
+rows = result.all()
+search_ms = (time.perf_counter() - start) * 1000
+          </code></pre>
+        </section>
+      </section>
+
+      <!-- ===== TACHE 5.5 ===== -->
+      <section>
+        <section>
+          <h3 class="task-title">T&acirc;che 5.5 : Impl&eacute;menter GET /documents/stats</h3>
+          <p><strong>Fichier</strong> : <code>python/rag-retriever/rag_retriever/routes/documents.py</code></p>
+          <p><strong>Endpoint</strong> : <code>GET /documents/stats</code></p>
+          <p>Retourne un <code>StatsResponse</code> :</p>
+          <pre><code class="language-json" data-trim>
+{
+  "total_documents": 5,
+  "total_chunks": 42,
+  "embedding_dimension": 384,
+  "model_name": "all-MiniLM-L6-v2"
+}
+          </code></pre>
+          <p><strong>SQL</strong> : <code>SELECT count(DISTINCT document_name), count(*) FROM document_chunks</code></p>
+          <p><strong>V&eacute;rification</strong> :</p>
+          <pre><code class="language-bash" data-trim>
+just test -- -k test_documents   # 2 tests doivent passer
+          </code></pre>
+        </section>
+      </section>
+
+      <!-- ===== TACHE 5.6 ===== -->
+      <section>
+        <section>
+          <h3 class="task-title">T&acirc;che 5.6 : Impl&eacute;menter l'API factory</h3>
+          <p><strong>Fichier</strong> : <code>python/rag-retriever/rag_retriever/api.py</code></p>
+          <p><strong>Fonctions</strong> :</p>
+          <ol>
+            <li><code>lifespan(app)</code> — context manager async qui appelle <code>init_dependencies()</code> au d&eacute;marrage et <code>shutdown_dependencies()</code> &agrave; l'arr&ecirc;t</li>
+            <li><code>create_app()</code> — cr&eacute;e l'app FastAPI avec titre, description, version, lifespan, et enregistre les 3 routers</li>
+          </ol>
+          <pre><code class="language-python" data-trim>
+from rag_retriever.routes.health import router as health_router
+from rag_retriever.routes.search import router as search_router
+from rag_retriever.routes.documents import router as documents_router
+          </code></pre>
+        </section>
+      </section>
+
+      <!-- ===== TACHE 5.7 ===== -->
+      <section>
+        <section>
+          <h3 class="task-title">T&acirc;che 5.7 : Impl&eacute;menter App.run()</h3>
+          <p><strong>Fichier</strong> : <code>python/rag-retriever/rag_retriever/app.py</code></p>
+          <p>D&eacute;marre uvicorn en mode factory :</p>
+          <pre><code class="language-python" data-trim>
+uvicorn.run(
+    "rag_retriever.api:create_app",
+    host=task_inputs.host,
+    port=task_inputs.port,
+    factory=True,
+)
+          </code></pre>
+          <p><strong>V&eacute;rification finale</strong> :</p>
+          <pre><code class="language-bash" data-trim>
+just test                     # TOUS les tests
+just check-all                # ruff + mypy clean
+          </code></pre>
+        </section>
+      </section>
+
+      <!-- ===== TACHE 5.8 ===== -->
+      <section>
+        <section>
+          <h3 class="task-title">T&acirc;che 5.8 : Tester le syst&egrave;me complet</h3>
+          <pre><code class="language-bash" data-trim>
+# Depuis la racine
+just pipeline                 # load + embed
+just serve                    # démarre l'API sur http://localhost:8000
+
+# Dans un autre terminal
+just query "what is MLOps?"
+# ou avec curl :
+curl -X POST http://localhost:8000/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "what is MLOps?", "top_k": 5}'
+          </code></pre>
+        </section>
+
+        <!-- 5.8 suite : autres endpoints -->
+        <section>
+          <h3 class="task-title">T&acirc;che 5.8 — Autres endpoints &agrave; tester</h3>
+          <ul>
+            <li><code>http://localhost:8000/health</code></li>
+            <li><code>http://localhost:8000/ready</code></li>
+            <li><code>http://localhost:8000/documents/stats</code></li>
+            <li><code>http://localhost:8000/docs</code> (Swagger UI auto-g&eacute;n&eacute;r&eacute; par FastAPI)</li>
+          </ul>
+        </section>
+      </section>
+
+      <!-- ===== RECAP ===== -->
+      <section>
+        <h2>R&eacute;capitulatif Session 2</h2>
+        <p>&Agrave; la fin de cette session, vous avez :</p>
+        <ul class="checklist">
+          <li>Impl&eacute;ment&eacute; <code>writer.py</code> — batch upsert dans pgvector</li>
+          <li>Impl&eacute;ment&eacute; <code>app.py</code> du rag-embedder — chargement, embedding, sauvegarde</li>
+          <li><code>just embed</code> ins&egrave;re des vecteurs dans PostgreSQL</li>
+          <li>Impl&eacute;ment&eacute; <code>dependencies.py</code> — injection de d&eacute;pendances FastAPI</li>
+          <li>Impl&eacute;ment&eacute; <code>routes/health.py</code> — endpoints /health et /ready</li>
+          <li>Impl&eacute;ment&eacute; <code>routes/search.py</code> — recherche s&eacute;mantique avec pgvector</li>
+          <li>Impl&eacute;ment&eacute; <code>routes/documents.py</code> — statistiques</li>
+          <li>Impl&eacute;ment&eacute; <code>api.py</code> — application factory FastAPI</li>
+          <li><code>just serve</code> d&eacute;marre l'API, <code>just query</code> retourne des r&eacute;sultats</li>
+          <li><code>just test-all</code> passe pour tous les packages</li>
+          <li><code>just check-all</code> passe pour tous les packages</li>
+        </ul>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/reveal.js@5/dist/reveal.js"></script>
+  <script src="https://unpkg.com/reveal.js@5/plugin/highlight/highlight.js"></script>
+  <script src="https://unpkg.com/reveal.js@5/plugin/markdown/markdown.js"></script>
+  <script src="https://unpkg.com/reveal.js@5/plugin/notes/notes.js"></script>
+  <script>
+    Reveal.initialize({
+      slideNumber: true,
+      hash: true,
+      width: 1280,
+      height: 720,
+      plugins: [RevealHighlight, RevealMarkdown, RevealNotes]
+    });
+  </script>
+</body>
+</html>

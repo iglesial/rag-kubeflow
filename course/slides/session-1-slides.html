@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 1 — Fondations</title>
+<link rel="stylesheet" href="https://unpkg.com/reveal.js@5/dist/reset.css">
+<link rel="stylesheet" href="https://unpkg.com/reveal.js@5/dist/reveal.css">
+<link rel="stylesheet" href="https://unpkg.com/reveal.js@5/dist/theme/moon.css">
+<link rel="stylesheet" href="https://unpkg.com/reveal.js@5/plugin/highlight/monokai.css">
+<style>
+  .reveal pre code {
+    max-height: 500px;
+    font-size: 0.45em;
+    line-height: 1.4;
+  }
+  .reveal table {
+    font-size: 0.6em;
+  }
+  .reveal table th,
+  .reveal table td {
+    border: 1px solid #555;
+    padding: 0.3em 0.6em;
+  }
+  .reveal table thead th {
+    border-bottom: 2px solid #aaa;
+  }
+  .reveal li {
+    font-size: 0.75em;
+  }
+  .task-title {
+    color: #4fc3f7 !important;
+  }
+  .reveal pre.tree-block {
+    font-size: 0.45em;
+    line-height: 1.4;
+  }
+  .reveal pre.tree-block code {
+    max-height: 500px;
+  }
+  .reveal .hint-label {
+    color: #ffb74d;
+    font-weight: bold;
+  }
+  .reveal section p {
+    font-size: 0.75em;
+  }
+  .reveal section ul {
+    display: block;
+  }
+  .reveal blockquote {
+    font-size: 0.7em;
+    width: 90%;
+  }
+  .reveal h2 {
+    font-size: 1.4em;
+  }
+  .reveal h3 {
+    font-size: 1.1em;
+  }
+</style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ============================================ -->
+<!-- TITLE SLIDE                                   -->
+<!-- ============================================ -->
+<section>
+  <h1>Session 1 — Fondations</h1>
+  <h3>Infrastructure, bibliothèques partagées et document loader</h3>
+  <p><em>RAG Retrieval System — MLOps avec Kubeflow</em></p>
+</section>
+
+<!-- ============================================ -->
+<!-- PLANNING                                      -->
+<!-- ============================================ -->
+<section>
+  <h2>Planning</h2>
+  <table>
+    <thead>
+      <tr><th>Horaire</th><th>Activité</th><th>Type</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0:00-0:45</td><td>Introduction, architecture, vérification de l'environnement</td><td>Cours</td></tr>
+      <tr><td>0:45-1:15</td><td>Epic 1 : pre-commit, docker-compose, justfile</td><td>Guidé</td></tr>
+      <tr><td>1:15-1:30</td><td>Pause</td><td></td></tr>
+      <tr><td>1:30-2:00</td><td>Démo : patron package-1, Pydantic BaseSettings</td><td>Cours</td></tr>
+      <tr><td>2:00-3:30</td><td>Epic 2 : découverte des bibliothèques partagées (fournies)</td><td>Lecture + exploration</td></tr>
+      <tr><td>3:30-3:45</td><td>Pause</td><td></td></tr>
+      <tr><td>3:45-5:45</td><td>Epic 3 : implémentation de rag-loader</td><td>Hands-on</td></tr>
+      <tr><td>5:45-6:30</td><td>Exécution de <code>just load</code>, vérification du JSON, tests</td><td>Hands-on</td></tr>
+      <tr><td>6:30-7:00</td><td>Récapitulatif + Q&amp;A</td><td>Cours</td></tr>
+    </tbody>
+  </table>
+  <p><strong>Livrable</strong> : <code>just load</code> produit un fichier <code>data/chunks/chunks.json</code>. Tous les tests passent.</p>
+</section>
+
+<!-- ============================================ -->
+<!-- EPIC 1 — INFRASTRUCTURE                       -->
+<!-- ============================================ -->
+<section>
+  <h2>Epic 1 — Infrastructure</h2>
+  <p>(guidé, ~30 min)</p>
+  <p>Ces fichiers sont <strong>fournis dans le template</strong>. L'enseignant les parcourt avec les étudiants.</p>
+</section>
+
+<!-- TACHE 1.1 -->
+<section>
+  <h3 class="task-title">Tâche 1.1 : Vérifier l'environnement</h3>
+  <pre><code class="language-bash" data-trim>
+docker --version          # Docker Desktop installé
+python --version          # >= 3.13
+uv --version              # uv installé
+kind --version            # kind installé
+kubectl version --client  # kubectl installé
+git --version             # git installé
+  </code></pre>
+</section>
+
+<!-- TACHE 1.2 -->
+<section>
+  <section>
+    <h3 class="task-title">Tâche 1.2 : Démarrer PostgreSQL</h3>
+    <pre><code class="language-bash" data-trim>
+docker compose up -d
+docker compose ps          # postgres healthy
+    </code></pre>
+    <p>Vérifier la connexion :</p>
+    <pre><code class="language-bash" data-trim>
+docker exec -it rag-postgres psql -U rag -d rag -c "\dt"
+    </code></pre>
+    <p>La table <code>document_chunks</code> doit apparaître (créée par <code>infra/init.sql</code>).</p>
+  </section>
+</section>
+
+<!-- TACHE 1.3 -->
+<section>
+  <h3 class="task-title">Tâche 1.3 : Installer pre-commit</h3>
+  <pre><code class="language-bash" data-trim>
+pip install pre-commit     # ou uv tool install pre-commit
+pre-commit install
+pre-commit run --all-files # tout doit passer
+  </code></pre>
+</section>
+
+<!-- TACHE 1.4 -->
+<section>
+  <h3 class="task-title">Tâche 1.4 : Explorer le justfile racine</h3>
+  <pre><code class="language-bash" data-trim>
+just --list                # voir toutes les recettes disponibles
+  </code></pre>
+  <p>Comprendre les recettes <code>infra-up</code>, <code>infra-down</code>, <code>load</code>, <code>embed</code>, <code>serve</code>, <code>query</code>.</p>
+</section>
+
+<!-- ============================================ -->
+<!-- EPIC 2 — BIBLIOTHEQUES PARTAGEES              -->
+<!-- ============================================ -->
+<section>
+  <h2>Epic 2 — Bibliothèques partagées</h2>
+  <p>(fournies, ~1h30)</p>
+  <p>Les 3 bibliothèques sont <strong>fournies complètes</strong>. L'objectif est de les comprendre car elles seront utilisées dans les packages suivants.</p>
+</section>
+
+<!-- TACHE 2.1 -->
+<section>
+  <section>
+    <h3 class="task-title">Tâche 2.1 : Explorer lib-schemas</h3>
+    <p><strong>Fichier</strong> : <code>python/lib-schemas/lib_schemas/schemas.py</code></p>
+    <p>Modèles Pydantic partagés entre les packages :</p>
+    <table>
+      <thead>
+        <tr><th>Classe</th><th>Usage</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>ChunkInput</code></td><td>Chunk de texte (document_name, chunk_index, content, metadata)</td></tr>
+        <tr><td><code>ChunkWithEmbedding</code></td><td>ChunkInput + vecteur embedding (list[float])</td></tr>
+        <tr><td><code>SearchRequest</code></td><td>Requête API (query, top_k, similarity_threshold)</td></tr>
+        <tr><td><code>SearchResult</code></td><td>Résultat de recherche (chunk_id, document_name, content, similarity_score)</td></tr>
+        <tr><td><code>SearchResponse</code></td><td>Réponse API (results, total_results, timings)</td></tr>
+        <tr><td><code>StatsResponse</code></td><td>Statistiques documents (total_documents, total_chunks, embedding_dimension, model_name)</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section>
+    <h3 class="task-title">Tâche 2.1 : Vérification</h3>
+    <pre><code class="language-bash" data-trim>
+cd python/lib-schemas && just test
+    </code></pre>
+  </section>
+</section>
+
+<!-- TACHE 2.2 -->
+<section>
+  <section>
+    <h3 class="task-title">Tâche 2.2 : Explorer lib-embedding</h3>
+    <p><strong>Fichier</strong> : <code>python/lib-embedding/lib_embedding/embedding.py</code></p>
+    <ul>
+      <li><code>EmbeddingClient(model_name)</code> — charge le modèle sentence-transformers</li>
+      <li><code>encode(texts: list[str]) -&gt; list[list[float]]</code> — encode une liste de textes en vecteurs 384-dim</li>
+      <li><code>dimension</code> — propriété retournant la dimension du modèle</li>
+    </ul>
+  </section>
+  <section>
+    <h3 class="task-title">Tâche 2.2 : Vérification</h3>
+    <pre><code class="language-bash" data-trim>
+cd python/lib-embedding && just test
+    </code></pre>
+  </section>
+</section>
+
+<!-- TACHE 2.3 -->
+<section>
+  <section>
+    <h3 class="task-title">Tâche 2.3 : Explorer lib-orm</h3>
+    <p><strong>Fichiers</strong> :</p>
+    <ul>
+      <li><code>python/lib-orm/lib_orm/db.py</code> — <code>get_async_engine()</code>, <code>get_async_session()</code></li>
+      <li><code>python/lib-orm/lib_orm/models.py</code> — ORM <code>DocumentChunk</code> (SQLAlchemy + pgvector)</li>
+    </ul>
+    <p>La table <code>document_chunks</code> correspond au schéma dans <code>infra/init.sql</code> :</p>
+    <ul>
+      <li><code>id</code> (UUID), <code>document_name</code>, <code>chunk_index</code>, <code>content</code>, <code>metadata</code> (JSONB), <code>embedding</code> (vector(384))</li>
+    </ul>
+  </section>
+  <section>
+    <h3 class="task-title">Tâche 2.3 : Vérification</h3>
+    <pre><code class="language-bash" data-trim>
+cd python/lib-orm && just test
+    </code></pre>
+  </section>
+</section>
+
+<!-- ============================================ -->
+<!-- EPIC 3 — DOCUMENT LOADER                      -->
+<!-- ============================================ -->
+<section>
+  <h2>Epic 3 — Document Loader</h2>
+  <p>(hands-on, ~2h)</p>
+  <p>C'est le premier package que les étudiants <strong>implémentent eux-mêmes</strong>.</p>
+</section>
+
+<!-- TACHE 3.1 -->
+<section>
+  <section>
+    <h3 class="task-title">Tâche 3.1 : Comprendre la structure du package</h3>
+    <pre class="tree-block"><code data-trim>
+python/rag-loader/
+├── rag_loader/
+│   ├── __init__.py       # fourni
+│   ├── main.py           # fourni (projen, ne pas modifier)
+│   ├── task_inputs.py    # fourni
+│   ├── app.py            # À IMPLÉMENTER
+│   ├── reader.py         # À IMPLÉMENTER
+│   └── chunker.py        # À IMPLÉMENTER
+├── tests/                # fournis
+├── pyproject.toml        # fourni
+├── justfile              # fourni
+└── uv.lock               # fourni
+    </code></pre>
+  </section>
+  <section>
+    <h3 class="task-title">Tâche 3.1 : Installer et tester</h3>
+    <p>Installer les dépendances :</p>
+    <pre><code class="language-bash" data-trim>
+cd python/rag-loader && just install-dev
+    </code></pre>
+    <p>Exécuter les tests pour voir ce qui échoue :</p>
+    <pre><code class="language-bash" data-trim>
+just test   # tout doit être rouge sauf test_init et test_task_inputs
+    </code></pre>
+  </section>
+</section>
+
+<!-- TACHE 3.2 -->
+<section>
+  <section>
+    <h3 class="task-title">Tâche 3.2 : Implémenter le lecteur de documents</h3>
+    <p><strong>Fichier</strong> : <code>python/rag-loader/rag_loader/reader.py</code></p>
+    <p><strong>Fonction à implémenter</strong> :</p>
+    <pre><code class="language-python" data-trim>
+SUPPORTED_EXTENSIONS = {".txt", ".md"}
+
+def read_documents(input_dir: str) -> list[dict[str, object]]:
+    </code></pre>
+  </section>
+  <section>
+    <h3 class="task-title">Tâche 3.2 : Comportement attendu</h3>
+    <ol>
+      <li>Vérifier que <code>input_dir</code> existe et est un dossier (sinon <code>FileNotFoundError</code> / <code>NotADirectoryError</code>)</li>
+      <li>Lister les fichiers <code>.md</code> et <code>.txt</code> uniquement (non récursif)</li>
+      <li>Trier les fichiers par nom avant traitement</li>
+      <li>Lire chaque fichier en UTF-8 (utiliser <code>encoding="utf-8-sig"</code> pour gérer le BOM)</li>
+      <li>Retourner une liste de dicts avec les clés : <code>document_name</code>, <code>content</code>, <code>metadata</code></li>
+      <li><code>metadata</code> contient <code>file_size</code> (int) et <code>extension</code> (str)</li>
+    </ol>
+  </section>
+  <section>
+    <h3 class="task-title">Tâche 3.2 : Vérification</h3>
+    <pre><code class="language-bash" data-trim>
+just test -- -k test_reader   # 8 tests doivent passer
+    </code></pre>
+  </section>
+  <section>
+    <h3><span class="hint-label">Indice 1 : structure de base</span></h3>
+    <pre><code class="language-python" data-trim>
+from pathlib import Path
+
+def read_documents(input_dir: str) -> list[dict[str, object]]:
+    path = Path(input_dir)
+    if not path.exists():
+        raise FileNotFoundError(...)
+    if not path.is_dir():
+        raise NotADirectoryError(...)
+
+    documents = []
+    for file_path in sorted(path.iterdir()):
+        if file_path.suffix in SUPPORTED_EXTENSIONS:
+            # lire le fichier et construire le dict
+            ...
+    return documents
+    </code></pre>
+  </section>
+  <section>
+    <h3><span class="hint-label">Indice 2 : construction du dict retourné</span></h3>
+    <pre><code class="language-python" data-trim>
+content = file_path.read_text(encoding="utf-8-sig")
+documents.append({
+    "document_name": file_path.name,
+    "content": content,
+    "metadata": {
+        "file_size": file_path.stat().st_size,
+        "extension": file_path.suffix,
+    },
+})
+    </code></pre>
+  </section>
+</section>
+
+<!-- TACHE 3.3 -->
+<section>
+  <section>
+    <h3 class="task-title">Tâche 3.3 : Implémenter le chunker</h3>
+    <p><strong>Fichier</strong> : <code>python/rag-loader/rag_loader/chunker.py</code></p>
+    <p>C'est l'algorithme le plus intéressant de la session : un <strong>recursive character splitter</strong> (~50 lignes).</p>
+    <p><strong>Fonctions à implémenter</strong> :</p>
+    <pre><code class="language-python" data-trim>
+SEPARATORS = ["\n\n", "\n", ". ", " ", ""]
+
+def chunk_text(text: str, chunk_size: int = 512,
+               chunk_overlap: int = 64) -> list[str]:
+    ...
+
+def _split_recursive(text: str, chunk_size: int,
+                     sep_idx: int) -> list[str]:
+    ...
+
+def _merge_with_overlap(segments: list[str], chunk_size: int,
+                        chunk_overlap: int) -> list[str]:
+    ...
+    </code></pre>
+  </section>
+  <section>
+    <h3 class="task-title">Tâche 3.3 : Algorithme de chunk_text</h3>
+    <ol>
+      <li>Lever <code>ValueError</code> si <code>chunk_overlap &gt;= chunk_size</code></li>
+      <li>Retourner <code>[]</code> si le texte est vide ou ne contient que des espaces</li>
+      <li>Appeler <code>_split_recursive(text, chunk_size, 0)</code> pour obtenir des segments</li>
+      <li>Appeler <code>_merge_with_overlap(segments, chunk_size, chunk_overlap)</code> pour fusionner avec recouvrement</li>
+    </ol>
+  </section>
+  <section>
+    <h3 class="task-title">Tâche 3.3 : Algorithme de _split_recursive</h3>
+    <ol>
+      <li>Si <code>len(text) &lt;= chunk_size</code> : retourner <code>[text]</code></li>
+      <li>Si <code>sep_idx &gt;= len(SEPARATORS)</code> : retourner <code>[text]</code> (dernier recours)</li>
+      <li>Séparer le texte avec <code>SEPARATORS[sep_idx]</code></li>
+      <li>Pour le séparateur <code>""</code> : découper caractère par caractère (<code>text[i:i+chunk_size]</code>)</li>
+      <li>Si le split ne produit qu'un seul morceau : essayer le séparateur suivant</li>
+      <li>Pour <code>". "</code> : rattacher le <code>.</code> à la fin de chaque segment</li>
+      <li>Filtrer les segments vides, et récurser sur les segments trop longs</li>
+    </ol>
+  </section>
+  <section>
+    <h3 class="task-title">Tâche 3.3 : Algorithme de _merge_with_overlap</h3>
+    <ol>
+      <li>Fusionner les segments tant que <code>len(merged) + 1 + len(next) &lt;= chunk_size</code></li>
+      <li>Quand la limite est atteinte : sauvegarder le chunk courant, calculer le recouvrement depuis la fin</li>
+      <li>Le recouvrement = derniers <code>chunk_overlap</code> caractères du chunk qui vient d'être sauvegardé</li>
+    </ol>
+  </section>
+  <section>
+    <h3 class="task-title">Tâche 3.3 : Vérification</h3>
+    <pre><code class="language-bash" data-trim>
+just test -- -k test_chunker   # 13 tests doivent passer
+    </code></pre>
+  </section>
+  <section>
+    <h3><span class="hint-label">Indice 1 : _split_recursive cas de base</span></h3>
+    <pre><code class="language-python" data-trim>
+def _split_recursive(text: str, chunk_size: int,
+                     sep_idx: int) -> list[str]:
+    if len(text) <= chunk_size:
+        return [text]
+    if sep_idx >= len(SEPARATORS):
+        return [text]
+
+    sep = SEPARATORS[sep_idx]
+    if sep == "":
+        return [text[i:i + chunk_size]
+                for i in range(0, len(text), chunk_size)]
+    ...
+    </code></pre>
+  </section>
+  <section>
+    <h3><span class="hint-label">Indice 2 : _merge_with_overlap boucle principale</span></h3>
+    <pre><code class="language-python" data-trim>
+def _merge_with_overlap(segments, chunk_size, chunk_overlap):
+    if not segments:
+        return []
+    chunks = []
+    current = segments[0]
+    for seg in segments[1:]:
+        candidate = current + " " + seg
+        if len(candidate) <= chunk_size:
+            current = candidate
+        else:
+            chunks.append(current)
+            overlap_text = current[-chunk_overlap:] \
+                if chunk_overlap > 0 else ""
+            current = (overlap_text + " " + seg).strip() \
+                if overlap_text else seg
+    chunks.append(current)
+    return chunks
+    </code></pre>
+  </section>
+</section>
+
+<!-- TACHE 3.4 -->
+<section>
+  <section>
+    <h3 class="task-title">Tâche 3.4 : Implémenter App.run()</h3>
+    <p><strong>Fichier</strong> : <code>python/rag-loader/rag_loader/app.py</code></p>
+    <p><strong>Méthode à implémenter</strong> : <code>App.run(self) -&gt; None</code></p>
+  </section>
+  <section>
+    <h3 class="task-title">Tâche 3.4 : Comportement attendu</h3>
+    <ol>
+      <li>Afficher la configuration de <code>task_inputs</code> (input_dir, output_dir, chunk_size, chunk_overlap)</li>
+      <li>Appeler <code>read_documents(task_inputs.input_dir)</code></li>
+      <li>Pour chaque document : appeler <code>chunk_text()</code> et créer des objets <code>ChunkInput</code> (de <code>lib_schemas</code>)</li>
+      <li>Créer le dossier de sortie (<code>output_dir</code>) s'il n'existe pas</li>
+      <li>Écrire la liste de chunks en JSON dans <code>output_dir/chunks.json</code></li>
+      <li>Afficher des messages de progression ("Read N documents", "Generated N chunks")</li>
+    </ol>
+  </section>
+  <section>
+    <h3 class="task-title">Tâche 3.4 : Imports nécessaires</h3>
+    <pre><code class="language-python" data-trim>
+import json
+from pathlib import Path
+from lib_schemas.schemas import ChunkInput
+from rag_loader.chunker import chunk_text
+from rag_loader.reader import read_documents
+from rag_loader.task_inputs import task_inputs
+    </code></pre>
+  </section>
+  <section>
+    <h3 class="task-title">Tâche 3.4 : Vérification</h3>
+    <pre><code class="language-bash" data-trim>
+just test -- -k test_app     # 2 tests doivent passer
+just test                     # TOUS les tests doivent passer
+just check-all                # ruff + mypy clean
+    </code></pre>
+  </section>
+</section>
+
+<!-- TACHE 3.5 -->
+<section>
+  <section>
+    <h3 class="task-title">Tâche 3.5 : Exécuter le loader</h3>
+    <pre><code class="language-bash" data-trim>
+just run   # depuis python/rag-loader/
+# ou depuis la racine :
+just load
+    </code></pre>
+  </section>
+  <section>
+    <h3 class="task-title">Tâche 3.5 : Vérifier le résultat</h3>
+    <p>Vérifier le fichier <code>data/chunks/chunks.json</code> :</p>
+    <pre><code class="language-bash" data-trim>
+python -c "import json; chunks = json.load(open('data/chunks/chunks.json')); print(f'{len(chunks)} chunks')"
+    </code></pre>
+  </section>
+</section>
+
+<!-- ============================================ -->
+<!-- RECAPITULATIF                                 -->
+<!-- ============================================ -->
+<section>
+  <h2>Récapitulatif Session 1</h2>
+  <p>À la fin de cette session, vous avez :</p>
+  <ul>
+    <li>PostgreSQL + pgvector fonctionnel (<code>docker compose ps</code>)</li>
+    <li>Pre-commit installé et fonctionnel</li>
+    <li>Compris les 3 bibliothèques partagées (lib-schemas, lib-embedding, lib-orm)</li>
+    <li>Implémenté <code>reader.py</code> — lecture de fichiers .md/.txt</li>
+    <li>Implémenté <code>chunker.py</code> — recursive character splitter</li>
+    <li>Implémenté <code>app.py</code> — orchestration du loader</li>
+    <li><code>just load</code> produit <code>data/chunks/chunks.json</code></li>
+    <li><code>just test</code> passe dans <code>python/rag-loader/</code></li>
+    <li><code>just check-all</code> passe dans <code>python/rag-loader/</code></li>
+  </ul>
+</section>
+
+</div><!-- .slides -->
+</div><!-- .reveal -->
+
+<script src="https://unpkg.com/reveal.js@5/dist/reveal.js"></script>
+<script src="https://unpkg.com/reveal.js@5/plugin/highlight/highlight.js"></script>
+<script src="https://unpkg.com/reveal.js@5/plugin/markdown/markdown.js"></script>
+<script src="https://unpkg.com/reveal.js@5/plugin/notes/notes.js"></script>
+<script>
+  Reveal.initialize({
+    slideNumber: true,
+    hash: true,
+    width: 1280,
+    height: 720,
+    plugins: [RevealHighlight, RevealMarkdown, RevealNotes]
+  });
+</script>
+</body>
+</html>

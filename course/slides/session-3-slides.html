@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Session 3 — Orchestration Kubernetes</title>
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@5/dist/reset.css" />
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@5/dist/reveal.css" />
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@5/dist/theme/moon.css" />
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@5/plugin/highlight/monokai.css" />
+  <style>
+    .reveal pre code {
+      max-height: 500px;
+      font-size: 0.45em;
+      line-height: 1.4;
+    }
+    .reveal table {
+      font-size: 0.6em;
+    }
+    .reveal table th,
+    .reveal table td {
+      border: 1px solid #555;
+      padding: 0.3em 0.6em;
+    }
+    .reveal table thead th {
+      border-bottom: 2px solid #888;
+    }
+    .reveal li {
+      font-size: 0.75em;
+    }
+    .task-title {
+      color: #4fc3f7;
+    }
+    .reveal section img {
+      border: none;
+      box-shadow: none;
+    }
+    .reveal .small {
+      font-size: 0.55em;
+    }
+    .reveal blockquote {
+      font-size: 0.75em;
+      width: 90%;
+      padding: 0.5em 1em;
+    }
+    .reveal pre {
+      width: 100%;
+    }
+    .hint-title {
+      color: #ffd54f;
+      font-size: 0.8em;
+    }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ============================================================ -->
+<!-- TITLE SLIDE -->
+<!-- ============================================================ -->
+<section>
+  <h1>Session 3</h1>
+  <h2>Orchestration Kubernetes</h2>
+  <p><em>Kubeflow Pipelines sur Kind : du local au cluster</em></p>
+</section>
+
+<!-- ============================================================ -->
+<!-- PLANNING -->
+<!-- ============================================================ -->
+<section>
+  <h2>Planning</h2>
+  <table>
+    <thead>
+      <tr><th>Horaire</th><th>Activit&eacute;</th><th>Type</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0:00-0:45</td><td>Crash course Kubernetes + KFP</td><td>Cours</td></tr>
+      <tr><td>0:45-1:15</td><td>Cr&eacute;ation du cluster Kind + d&eacute;ploiement KFP</td><td>Guid&eacute;</td></tr>
+      <tr><td>1:15-1:30</td><td>Pause (KFP se d&eacute;ploie en arri&egrave;re-plan)</td><td></td></tr>
+      <tr><td>1:30-2:30</td><td>Epic 6 partie 1 : scaffold rag-pipeline, composants KFP</td><td>Hands-on</td></tr>
+      <tr><td>2:30-3:30</td><td>Epic 6 partie 2 : d&eacute;finition du pipeline, Dockerfiles</td><td>Hands-on</td></tr>
+      <tr><td>3:30-3:45</td><td>Pause</td><td></td></tr>
+      <tr><td>3:45-5:00</td><td>Epic 6 partie 3 : build images, chargement Kind, soumission</td><td>Guid&eacute;</td></tr>
+      <tr><td>5:00-5:45</td><td>Epic 7 : test d'int&eacute;gration e2e</td><td>Hands-on</td></tr>
+      <tr><td>5:45-6:30</td><td>Explorer l'interface KFP, re-lancer le pipeline</td><td>Libre</td></tr>
+      <tr><td>6:30-7:00</td><td>R&eacute;capitulatif du cours, &eacute;valuation, Q&amp;A</td><td>Cours</td></tr>
+    </tbody>
+  </table>
+  <p><strong>Livrable</strong> : le pipeline KFP s'ex&eacute;cute sur le cluster Kind, le test e2e passe, l'interface KFP affiche le run.</p>
+</section>
+
+<!-- ============================================================ -->
+<!-- CRASH COURSE KUBERNETES -->
+<!-- ============================================================ -->
+<section>
+  <h2>Crash course Kubernetes + KFP</h2>
+  <p><em>~45 min &mdash; Cours</em></p>
+</section>
+
+<!-- Kubernetes concepts essentiels -->
+<section>
+  <h3>Kubernetes &mdash; concepts essentiels</h3>
+  <table>
+    <thead>
+      <tr><th>Concept</th><th>Explication</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Pod</strong></td><td>Plus petite unit&eacute; ex&eacute;cutable. Contient un ou plusieurs conteneurs.</td></tr>
+      <tr><td><strong>Service</strong></td><td>Point d'acc&egrave;s r&eacute;seau stable vers un ensemble de pods.</td></tr>
+      <tr><td><strong>Namespace</strong></td><td>Isolation logique dans un cluster (KFP utilise <code>kubeflow</code>).</td></tr>
+      <tr><td><strong>kubectl</strong></td><td>CLI pour interagir avec le cluster.</td></tr>
+      <tr><td><strong>Kind</strong></td><td>Kubernetes IN Docker &mdash; un cluster K8s complet dans des conteneurs Docker.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- Kubernetes commandes utiles -->
+<section>
+  <h3>Commandes kubectl utiles</h3>
+  <pre><code class="language-bash" data-trim>
+kubectl get pods -n kubeflow          # voir les pods KFP
+kubectl get svc -n kubeflow           # voir les services
+kubectl logs &lt;pod-name&gt; -n kubeflow   # logs d'un pod
+kubectl describe pod &lt;name&gt; -n kubeflow  # d&eacute;tails d'un pod
+  </code></pre>
+</section>
+
+<!-- KFP concepts essentiels -->
+<section>
+  <h3>Kubeflow Pipelines &mdash; concepts essentiels</h3>
+  <table>
+    <thead>
+      <tr><th>Concept</th><th>Explication</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Component</strong></td><td>&Eacute;tape &eacute;l&eacute;mentaire = un conteneur Docker avec des entr&eacute;es/sorties.</td></tr>
+      <tr><td><strong>Pipeline</strong></td><td>Graphe acyclique de components avec d&eacute;pendances de donn&eacute;es.</td></tr>
+      <tr><td><strong>Artifact</strong></td><td>Donn&eacute;e produite par un component et consomm&eacute;e par un autre.</td></tr>
+      <tr><td><strong>Run</strong></td><td>Ex&eacute;cution d'un pipeline avec des param&egrave;tres donn&eacute;s.</td></tr>
+      <tr><td><strong>Compiler</strong></td><td>Traduit le code Python en YAML ex&eacute;cutable par KFP.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- Architecture du pipeline RAG -->
+<section>
+  <h3>Architecture du pipeline RAG</h3>
+  <pre>
+&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;   JSON chunks   &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+&#x2502;  rag-loader   &#x2502;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&gt;&#x2502;  rag-embedder   &#x2502;
+&#x2502;  (chunk docs) &#x2502;   (artifact)   &#x2502;  (embed+store)  &#x2502;
+&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;                 &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x252C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+                                         &#x2502; writes to
+                                         v
+                                 PostgreSQL+pgvector
+                                 (host.docker.internal:5432)
+  </pre>
+  <p>Les pods dans Kind acc&egrave;dent &agrave; PostgreSQL sur l'h&ocirc;te via <code>host.docker.internal</code>.</p>
+</section>
+
+<!-- ============================================================ -->
+<!-- CREATION DU CLUSTER KIND -->
+<!-- ============================================================ -->
+<section>
+  <h2>Cr&eacute;ation du cluster Kind</h2>
+  <p><em>~30 min &mdash; Guid&eacute;</em></p>
+  <blockquote><strong>Important</strong> : le d&eacute;ploiement de KFP prend 5-10 minutes. Lancez-le t&ocirc;t et travaillez sur le code pendant ce temps.</blockquote>
+</section>
+
+<!-- Etape 1 : Creer le cluster -->
+<section>
+  <h3 class="task-title">&Eacute;tape 1 : Cr&eacute;er le cluster</h3>
+  <pre><code class="language-bash" data-trim>
+kind create cluster --name rag-kubeflow \
+  --config infra/kind-config.yaml --wait 60s
+  </code></pre>
+  <p>V&eacute;rifier :</p>
+  <pre><code class="language-bash" data-trim>
+kubectl cluster-info
+kubectl get nodes   # doit montrer 1 n&oelig;ud "Ready"
+  </code></pre>
+</section>
+
+<!-- Etape 2 : Deployer KFP -->
+<section>
+  <h3 class="task-title">&Eacute;tape 2 : D&eacute;ployer KFP</h3>
+  <pre><code class="language-bash" data-trim>
+# Ressources cluster-scoped
+kubectl apply -k \
+  "github.com/kubeflow/pipelines/manifests/kustomize/cluster-scoped-resources?ref=2.3.0"
+kubectl wait crd/applications.app.k8s.io \
+  --for condition=established --timeout=60s
+
+# Environnement platform-agnostic
+kubectl apply -k \
+  "github.com/kubeflow/pipelines/manifests/kustomize/env/platform-agnostic?ref=2.3.0"
+  </code></pre>
+  <p>Attendre que les pods soient pr&ecirc;ts (5-10 min) :</p>
+  <pre><code class="language-bash" data-trim>
+kubectl wait pods -l application-crd-id=kubeflow-pipelines \
+  -n kubeflow --for condition=Ready --timeout=600s
+  </code></pre>
+  <p>Ou surveiller en temps r&eacute;el :</p>
+  <pre><code class="language-bash" data-trim>
+kubectl get pods -n kubeflow -w   # Ctrl+C pour arr&ecirc;ter
+  </code></pre>
+</section>
+
+<!-- Etape 3 : Acceder a l'interface KFP -->
+<section>
+  <h3 class="task-title">&Eacute;tape 3 : Acc&eacute;der &agrave; l'interface KFP</h3>
+  <pre><code class="language-bash" data-trim>
+just kfp-ui   # port-forward vers http://localhost:8080
+  </code></pre>
+  <p>Ouvrir <code>http://localhost:8080</code> dans le navigateur.</p>
+  <blockquote><strong>Alternative rapide</strong> : <code>just infra-up</code> fait tout d'un coup (docker-compose + kind + KFP + images).</blockquote>
+</section>
+
+<!-- ============================================================ -->
+<!-- EPIC 6 — KUBEFLOW PIPELINE -->
+<!-- ============================================================ -->
+<section>
+  <h2>Epic 6 &mdash; Kubeflow Pipeline</h2>
+  <p><em>~3h30 &mdash; Hands-on + Guid&eacute;</em></p>
+</section>
+
+<!-- Tache 6.1 : Comprendre la structure -->
+<section>
+  <h3 class="task-title">T&acirc;che 6.1 : Comprendre la structure du package</h3>
+  <pre><code data-trim>
+python/rag-pipeline/
+&#x251C;&#x2500;&#x2500; rag_pipeline/
+&#x2502;   &#x251C;&#x2500;&#x2500; __init__.py          # fourni
+&#x2502;   &#x251C;&#x2500;&#x2500; main.py              # fourni (projen)
+&#x2502;   &#x251C;&#x2500;&#x2500; task_inputs.py       # fourni
+&#x2502;   &#x251C;&#x2500;&#x2500; app.py               # &Agrave; IMPL&Eacute;MENTER
+&#x2502;   &#x251C;&#x2500;&#x2500; pipeline.py          # &Agrave; IMPL&Eacute;MENTER
+&#x2502;   &#x2514;&#x2500;&#x2500; components/
+&#x2502;       &#x251C;&#x2500;&#x2500; __init__.py      # fourni
+&#x2502;       &#x251C;&#x2500;&#x2500; loader.py        # &Agrave; IMPL&Eacute;MENTER
+&#x2502;       &#x2514;&#x2500;&#x2500; embedder.py      # &Agrave; IMPL&Eacute;MENTER
+&#x251C;&#x2500;&#x2500; tests/                   # fournis
+&#x251C;&#x2500;&#x2500; pyproject.toml           # fourni
+&#x251C;&#x2500;&#x2500; justfile                 # fourni
+&#x2514;&#x2500;&#x2500; uv.lock                  # fourni
+  </code></pre>
+</section>
+
+<!-- Tache 6.1 suite : commandes + TaskInputs -->
+<section>
+  <h3 class="task-title">T&acirc;che 6.1 : Installer et lancer les tests</h3>
+  <pre><code class="language-bash" data-trim>
+cd python/rag-pipeline && just install-dev
+just test   # voir ce qui &eacute;choue
+  </code></pre>
+  <p><strong>TaskInputs fournis</strong> :</p>
+  <ul>
+    <li><code>pipeline_name</code> (rag-ingestion)</li>
+    <li><code>input_dir</code> (data/documents)</li>
+    <li><code>kubeflow_host</code> (http://localhost:8080)</li>
+    <li><code>compile_only</code> (False)</li>
+    <li><code>chunk_size</code> (512), <code>chunk_overlap</code> (64)</li>
+    <li><code>db_url</code>, <code>embedding_model</code>, <code>batch_size</code> (32)</li>
+  </ul>
+</section>
+
+<!-- Tache 6.2 : Composant loader -->
+<section>
+  <section>
+    <h3 class="task-title">T&acirc;che 6.2 : Impl&eacute;menter le composant loader</h3>
+    <p><strong>Fichier</strong> : <code>python/rag-pipeline/rag_pipeline/components/loader.py</code></p>
+    <p>Un <strong>container component</strong> KFP encapsule un conteneur Docker comme &eacute;tape de pipeline.</p>
+    <pre><code class="language-python" data-trim>
+from kfp import dsl
+
+LOADER_IMAGE = "rag-loader:local"
+
+@dsl.container_component
+def loader_component(
+    input_dir: str,
+    chunk_size: int,
+    chunk_overlap: int,
+    chunks_artifact: dsl.Output[dsl.Artifact],
+) -> dsl.ContainerSpec:
+    </code></pre>
+    <p><strong>Comportement</strong> : retourner un <code>dsl.ContainerSpec</code> qui :</p>
+    <ol>
+      <li>Utilise l'image <code>rag-loader:local</code></li>
+      <li>Ex&eacute;cute la commande <code>["python", "-m", "rag_loader.main"]</code></li>
+      <li>Passe les arguments CLI : <code>--input-dir</code>, <code>--output-dir</code> (chemin de l'artifact), <code>--chunk-size</code>, <code>--chunk-overlap</code></li>
+    </ol>
+    <p><strong>V&eacute;rification</strong> :</p>
+    <pre><code class="language-bash" data-trim>
+just test -- -k test_loader   # tests doivent passer
+    </code></pre>
+  </section>
+  <!-- Hint vertical slide -->
+  <section>
+    <h4 class="hint-title">Indice : ContainerSpec</h4>
+    <pre><code class="language-python" data-trim>
+return dsl.ContainerSpec(
+    image=LOADER_IMAGE,
+    command=["python", "-m", "rag_loader.main"],
+    args=[
+        "--input-dir", input_dir,
+        "--output-dir", chunks_artifact.path,
+        "--chunk-size", str(chunk_size),
+        "--chunk-overlap", str(chunk_overlap),
+    ],
+)
+    </code></pre>
+  </section>
+</section>
+
+<!-- Tache 6.3 : Composant embedder -->
+<section>
+  <h3 class="task-title">T&acirc;che 6.3 : Impl&eacute;menter le composant embedder</h3>
+  <p><strong>Fichier</strong> : <code>python/rag-pipeline/rag_pipeline/components/embedder.py</code></p>
+  <pre><code class="language-python" data-trim>
+from kfp import dsl
+
+EMBEDDER_IMAGE = "rag-embedder:local"
+
+@dsl.container_component
+def embedder_component(
+    chunks_artifact: dsl.Input[dsl.Artifact],
+    db_url: str,
+    embedding_model: str,
+    batch_size: int,
+    embeddings_artifact: dsl.Output[dsl.Artifact],
+) -> dsl.ContainerSpec:
+  </code></pre>
+  <p>M&ecirc;me structure que le loader : image <code>rag-embedder:local</code>, commande <code>python -m rag_embedder.main</code>, arguments CLI.</p>
+  <p><strong>V&eacute;rification</strong> :</p>
+  <pre><code class="language-bash" data-trim>
+just test -- -k test_embedder   # tests doivent passer
+  </code></pre>
+</section>
+
+<!-- Tache 6.4 : Definition du pipeline -->
+<section>
+  <section>
+    <h3 class="task-title">T&acirc;che 6.4 : Impl&eacute;menter la d&eacute;finition du pipeline</h3>
+    <p><strong>Fichier</strong> : <code>python/rag-pipeline/rag_pipeline/pipeline.py</code></p>
+    <pre><code class="language-python" data-trim>
+from kfp import dsl
+from rag_pipeline.components.embedder import embedder_component
+from rag_pipeline.components.loader import loader_component
+
+@dsl.pipeline(
+    name="RAG Ingestion Pipeline",
+    description="Load documents, chunk, embed, and store in pgvector.",
+)
+def rag_ingestion_pipeline(
+    input_dir: str = "/data/documents",
+    chunk_size: int = 512,
+    chunk_overlap: int = 64,
+    db_url: str = "postgresql+asyncpg://rag:rag@host.docker.internal:5432/rag",
+    embedding_model: str = "all-MiniLM-L6-v2",
+    batch_size: int = 32,
+) -> None:
+    </code></pre>
+    <p><strong>Comportement</strong> :</p>
+    <ol>
+      <li>Appeler <code>loader_component()</code> avec <code>input_dir</code>, <code>chunk_size</code>, <code>chunk_overlap</code></li>
+      <li>R&eacute;cup&eacute;rer l'artifact de sortie du loader (<code>chunks_artifact</code>)</li>
+      <li>Appeler <code>embedder_component()</code> avec l'artifact du loader en entr&eacute;e + <code>db_url</code>, <code>embedding_model</code>, <code>batch_size</code></li>
+    </ol>
+    <p>Le cha&icirc;nage des composants via artifacts cr&eacute;e automatiquement la d&eacute;pendance d'ex&eacute;cution.</p>
+    <p><strong>V&eacute;rification</strong> :</p>
+    <pre><code class="language-bash" data-trim>
+just test -- -k test_pipeline   # 5 tests doivent passer
+    </code></pre>
+  </section>
+  <!-- Hint vertical slide -->
+  <section>
+    <h4 class="hint-title">Indice : cha&icirc;nage des composants</h4>
+    <pre><code class="language-python" data-trim>
+loader_task = loader_component(
+    input_dir=input_dir,
+    chunk_size=chunk_size,
+    chunk_overlap=chunk_overlap,
+)
+
+embedder_component(
+    chunks_artifact=loader_task.outputs["chunks_artifact"],
+    db_url=db_url,
+    embedding_model=embedding_model,
+    batch_size=batch_size,
+)
+    </code></pre>
+  </section>
+</section>
+
+<!-- Tache 6.5 : App.run() -->
+<section>
+  <h3 class="task-title">T&acirc;che 6.5 : Impl&eacute;menter App.run()</h3>
+  <p><strong>Fichier</strong> : <code>python/rag-pipeline/rag_pipeline/app.py</code></p>
+  <p><strong>Comportement</strong> :</p>
+  <ol>
+    <li>Afficher la configuration de <code>task_inputs</code></li>
+    <li>Compiler le pipeline en YAML avec <code>kfp.compiler.Compiler().compile()</code></li>
+    <li>Si <code>compile_only=True</code> : afficher le chemin du YAML et retourner</li>
+    <li>Sinon : cr&eacute;er un <code>kfp.client.Client(host=kubeflow_host)</code> et soumettre le pipeline</li>
+    <li>G&eacute;rer les erreurs de soumission gracieusement</li>
+  </ol>
+  <p><strong>Imports</strong> :</p>
+  <pre><code class="language-python" data-trim>
+from kfp import compiler, client
+from rag_pipeline.pipeline import rag_ingestion_pipeline
+from rag_pipeline.task_inputs import task_inputs
+  </code></pre>
+  <p><strong>V&eacute;rification</strong> :</p>
+  <pre><code class="language-bash" data-trim>
+just test -- -k test_app       # 2 tests doivent passer
+just test                       # TOUS les tests
+just check-all                  # ruff + mypy clean
+  </code></pre>
+</section>
+
+<!-- Tache 6.6 : Dockerfiles -->
+<section>
+  <section>
+    <h3 class="task-title">T&acirc;che 6.6 : Cr&eacute;er les Dockerfiles</h3>
+    <p><strong>Fichier</strong> : <code>python/rag-loader/Dockerfile</code></p>
+    <pre><code class="language-dockerfile" data-trim>
+# --- Builder ---
+FROM python:3.13-slim AS builder
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Copier les d&eacute;pendances partag&eacute;es
+COPY python/lib-schemas python/lib-schemas
+
+# Copier le package
+COPY python/rag-loader python/rag-loader
+
+# Installer
+RUN cd python/rag-loader &amp;&amp; uv sync --no-dev --frozen
+
+# --- Runtime ---
+FROM python:3.13-slim
+COPY --from=builder /python/rag-loader/.venv /python/rag-loader/.venv
+COPY --from=builder /python/rag-loader/rag_loader /python/rag-loader/rag_loader
+COPY --from=builder /python/lib-schemas/lib_schemas /python/rag-loader/lib_schemas
+
+# Donn&eacute;es sample baked dans l'image
+COPY data/documents /data/documents
+
+ENV PATH="/python/rag-loader/.venv/bin:$PATH"
+ENTRYPOINT ["python", "-m", "rag_loader.main"]
+    </code></pre>
+  </section>
+  <section>
+    <h3 class="task-title">T&acirc;che 6.6 : Dockerfile rag-embedder</h3>
+    <p><strong>Fichier</strong> : <code>python/rag-embedder/Dockerfile</code></p>
+    <p>M&ecirc;me structure multi-stage, mais avec <strong>3 libs partag&eacute;es</strong> :</p>
+    <ul>
+      <li><code>lib-schemas</code></li>
+      <li><code>lib-embedding</code></li>
+      <li><code>lib-orm</code></li>
+    </ul>
+  </section>
+</section>
+
+<!-- Tache 6.7 : Build + chargement Kind -->
+<section>
+  <h3 class="task-title">T&acirc;che 6.7 : Build + chargement dans Kind</h3>
+  <pre><code class="language-bash" data-trim>
+# Depuis la racine
+just build-images              # build les 3 images Docker
+just kfp-load-images           # charger loader + embedder dans Kind
+  </code></pre>
+  <p>V&eacute;rifier que les images sont dans le cluster :</p>
+  <pre><code class="language-bash" data-trim>
+docker exec rag-kubeflow-control-plane crictl images | grep rag
+  </code></pre>
+</section>
+
+<!-- Tache 6.8 : Soumettre le pipeline -->
+<section>
+  <h3 class="task-title">T&acirc;che 6.8 : Soumettre le pipeline</h3>
+  <pre><code class="language-bash" data-trim>
+# Compiler uniquement (pour v&eacute;rifier le YAML)
+cd python/rag-pipeline
+just run -- --compile-only
+
+# Soumettre au cluster (KFP UI doit &ecirc;tre accessible)
+just run
+  </code></pre>
+  <p>Ouvrir <code>http://localhost:8080</code> et observer le pipeline dans l'interface KFP :</p>
+  <ul>
+    <li>V&eacute;rifier que les deux &eacute;tapes (loader, embedder) apparaissent</li>
+    <li>Cliquer sur chaque &eacute;tape pour voir les logs</li>
+    <li>V&eacute;rifier que le run est vert (succ&egrave;s)</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<!-- EPIC 7 — TEST E2E -->
+<!-- ============================================================ -->
+<section>
+  <h2>Epic 7 &mdash; Test d'int&eacute;gration e2e</h2>
+  <p><em>~45 min &mdash; Hands-on</em></p>
+</section>
+
+<!-- Tache 7.1 : Executer le test e2e -->
+<section>
+  <h3 class="task-title">T&acirc;che 7.1 : Ex&eacute;cuter le test e2e</h3>
+  <p>Le test d'int&eacute;gration est <strong>fourni</strong> dans <code>tests/e2e/test_full_pipeline.py</code>.</p>
+  <p>Il v&eacute;rifie le pipeline complet : load &rarr; embed &rarr; search.</p>
+  <pre><code class="language-bash" data-trim>
+# Depuis la racine (PostgreSQL doit tourner)
+just e2e
+  </code></pre>
+  <p>Le test :</p>
+  <ol>
+    <li>Ex&eacute;cute le loader sur des documents de test</li>
+    <li>Ex&eacute;cute l'embedder pour vectoriser les chunks</li>
+    <li>Lance une requ&ecirc;te de recherche via l'API</li>
+    <li>V&eacute;rifie que les r&eacute;sultats sont pertinents</li>
+  </ol>
+</section>
+
+<!-- Tache 7.2 : Deboguer -->
+<section>
+  <h3 class="task-title">T&acirc;che 7.2 : D&eacute;boguer les probl&egrave;mes &eacute;ventuels</h3>
+  <table>
+    <thead>
+      <tr><th>Probl&egrave;me</th><th>Solution</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>Connection refused</code> (DB)</td><td>V&eacute;rifier <code>docker compose ps</code> &mdash; PostgreSQL doit tourner</td></tr>
+      <tr><td><code>ImagePullBackOff</code> dans KFP</td><td>Les images ne sont pas dans Kind &rarr; <code>just kfp-load-images</code></td></tr>
+      <tr><td>Pipeline timeout</td><td>Les pods prennent du temps &agrave; d&eacute;marrer &rarr; v&eacute;rifier <code>kubectl get pods -n kubeflow</code></td></tr>
+      <tr><td><code>host.docker.internal</code> ne r&eacute;sout pas</td><td>V&eacute;rifier <code>infra/kind-config.yaml</code> &mdash; le mapping doit exister</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================================================ -->
+<!-- EXPLORER L'INTERFACE KFP -->
+<!-- ============================================================ -->
+<section>
+  <h2>Explorer l'interface KFP</h2>
+  <p><em>~45 min &mdash; Libre</em></p>
+</section>
+
+<section>
+  <h3>Activit&eacute;s sugg&eacute;r&eacute;es</h3>
+  <ol>
+    <li><strong>Re-lancer le pipeline</strong> avec des param&egrave;tres diff&eacute;rents (chunk_size, chunk_overlap)</li>
+    <li><strong>Explorer les artifacts</strong> : voir le JSON produit par le loader</li>
+    <li><strong>Consulter les logs</strong> de chaque &eacute;tape</li>
+    <li><strong>Comparer des runs</strong> avec des param&egrave;tres diff&eacute;rents</li>
+    <li><strong>V&eacute;rifier la base</strong> : combien de chunks apr&egrave;s un nouveau run ?</li>
+  </ol>
+  <pre><code class="language-bash" data-trim>
+docker exec -it rag-postgres psql -U rag -d rag -c \
+  "SELECT document_name, count(*) FROM document_chunks GROUP BY document_name;"
+  </code></pre>
+</section>
+
+<!-- ============================================================ -->
+<!-- RECAPITULATIF -->
+<!-- ============================================================ -->
+<section>
+  <h2>R&eacute;capitulatif Session 3 (et du cours)</h2>
+</section>
+
+<section>
+  <h3>Checklist</h3>
+  <ul>
+    <li>Cluster Kind fonctionnel avec KFP</li>
+    <li>Impl&eacute;ment&eacute; les composants KFP (loader + embedder)</li>
+    <li>Impl&eacute;ment&eacute; la d&eacute;finition du pipeline (cha&icirc;nage via artifacts)</li>
+    <li>Impl&eacute;ment&eacute; App.run() pour compiler et soumettre</li>
+    <li>Cr&eacute;&eacute; les Dockerfiles multi-stage</li>
+    <li>Charg&eacute; les images dans Kind</li>
+    <li>Soumis et ex&eacute;cut&eacute; le pipeline via KFP</li>
+    <li>Test e2e passe (<code>just e2e</code>)</li>
+    <li><code>just test-all</code> passe pour tous les packages</li>
+    <li><code>just check-all</code> passe pour tous les packages</li>
+  </ul>
+</section>
+
+<section>
+  <h3>Ce que vous avez construit en 21 heures</h3>
+  <pre>
+Documents .md/.txt
+    &#x2502;
+    &#x25BC;
+[rag-loader]  &#x2500;&#x2500;&#x2500;&#x2500; chunk_text() &#x2500;&#x2500;&#x2500;&#x2500;&gt; chunks.json
+    &#x2502;                                      &#x2502;
+    &#x2502;              KFP Pipeline (Kind)     &#x2502;
+    &#x25BC;                                      &#x25BC;
+[rag-embedder] &#x2500;&#x2500; encode() + upsert &#x2500;&#x2500;&gt; PostgreSQL+pgvector
+                                              &#x2502;
+                                              &#x25BC;
+                                        [rag-retriever]
+                                         POST /search
+                                         FastAPI :8000
+  </pre>
+  <p>Un syst&egrave;me RAG complet, orchestr&eacute; par Kubernetes, avec tests, linting, et typage strict.</p>
+</section>
+
+</div><!-- .slides -->
+</div><!-- .reveal -->
+
+<script src="https://unpkg.com/reveal.js@5/dist/reveal.js"></script>
+<script src="https://unpkg.com/reveal.js@5/plugin/highlight/highlight.js"></script>
+<script src="https://unpkg.com/reveal.js@5/plugin/markdown/markdown.js"></script>
+<script src="https://unpkg.com/reveal.js@5/plugin/notes/notes.js"></script>
+<script>
+  Reveal.initialize({
+    slideNumber: true,
+    hash: true,
+    width: 1280,
+    height: 720,
+    plugins: [RevealHighlight, RevealMarkdown, RevealNotes],
+  });
+</script>
+</body>
+</html>
