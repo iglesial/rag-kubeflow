@@ -5,7 +5,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 from lib_schemas.schemas import ChunkWithEmbedding, SearchResponse
 from umap import UMAP
@@ -48,7 +47,7 @@ class App:
         coords = reducer.fit_transform(embedding_matrix)
         print("UMAP reduction complete")
 
-        # Build dataframe for plotly
+        # Build dataframe
         max_len = task_inputs.content_truncate_length
         df = pd.DataFrame(
             {
@@ -64,17 +63,39 @@ class App:
             }
         )
 
-        # Create interactive scatter plot
-        fig = px.scatter(
-            df,
-            x="UMAP-1",
-            y="UMAP-2",
-            color="document_name",
-            hover_data=["document_name", "chunk_index", "content_preview"],
-            title=task_inputs.plot_title,
+        fig = go.Figure()
+
+        # All corpus chunks in a single color
+        fig.add_trace(
+            go.Scatter(
+                x=df["UMAP-1"],
+                y=df["UMAP-2"],
+                mode="markers",
+                name="Chunks",
+                marker={"size": task_inputs.point_size, "color": "#636EFA"},
+                hovertemplate=(
+                    "<b>%{customdata[0]}</b><br>"
+                    "Chunk: %{customdata[1]}<br>"
+                    "%{customdata[2]}"
+                    "<extra></extra>"
+                ),
+                customdata=list(
+                    zip(
+                        df["document_name"],
+                        df["chunk_index"],
+                        df["content_preview"],
+                        strict=True,
+                    )
+                ),
+            )
         )
-        fig.update_traces(marker={"size": task_inputs.point_size})
-        fig.update_layout(legend_title_text="Document")
+
+        fig.update_layout(
+            title=task_inputs.plot_title,
+            xaxis_title="UMAP-1",
+            yaxis_title="UMAP-2",
+            legend_title_text="Legend",
+        )
 
         # Overlay query and retrieved chunks if query_file is provided
         if task_inputs.query_file:
@@ -115,13 +136,13 @@ class App:
         search_response = SearchResponse(**query_data)
         print(f"Query: {search_response.query!r} ({search_response.total_results} results)")
 
-        # Build index of (document_name, chunk_index) -> position for retrieved chunks
+        # Build index of (document_name, content) -> position for retrieved chunks
         retrieved_keys = {(r.document_name, r.content) for r in search_response.results}
         retrieved_indices = [
             i for i, c in enumerate(chunks) if (c.document_name, c.content) in retrieved_keys
         ]
 
-        # Highlight retrieved chunks with rings
+        # Highlight retrieved chunks
         if retrieved_indices:
             ret_df = df.iloc[retrieved_indices]
             fig.add_trace(
@@ -131,9 +152,8 @@ class App:
                     mode="markers",
                     name="Retrieved chunks",
                     marker={
-                        "size": task_inputs.point_size + 8,
-                        "color": "rgba(0,0,0,0)",
-                        "line": {"color": "red", "width": 2},
+                        "size": task_inputs.point_size + 4,
+                        "color": "#EF553B",
                     },
                     hovertemplate=(
                         "<b>%{customdata[0]}</b><br>"
@@ -168,7 +188,7 @@ class App:
                     name="Query",
                     marker={
                         "size": 14,
-                        "color": "black",
+                        "color": "#00CC96",
                         "symbol": "star",
                         "line": {"color": "white", "width": 1},
                     },
