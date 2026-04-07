@@ -1,0 +1,83 @@
+# Python Package Configuration
+
+[project]
+name = "rag-viz"
+version = "0.1.0"
+description = "UMAP embedding visualization for RAG system"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pydantic-settings>=2.0.0",
+    "lib-schemas",
+    "umap-learn>=0.5.0",
+    "plotly>=6.0.0",
+    "pandas>=2.0.0",
+    "numpy>=2.0.0",
+]
+
+[project.scripts]
+main = "rag_viz.main:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.14.4",
+    "mypy>=1.18.2",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "D",  # pydocstyle
+]
+ignore = []
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
+disallow_subclassing_any = false
+
+[tool.uv]
+package = true
+
+[tool.uv.sources]
+lib-schemas = { path = "../lib-schemas", editable = true }
+
+[tool.setuptools]
+packages = ["rag_viz"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=rag_viz",
+]
+
+[tool.numpydoc_validation]
+checks = [
+    "all",   # report on all checks, except the below
+    "EX01",
+    "SA01",
+    "ES01",
+]

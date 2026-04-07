@@ -108,6 +108,8 @@ class SearchResponse(BaseModel):
         Time spent embedding the query in milliseconds.
     search_time_ms : float
         Time spent searching the database in milliseconds.
+    query_embedding : list[float] | None
+        Embedding vector of the query (for visualization).
     """
 
     query: str
@@ -115,6 +117,7 @@ class SearchResponse(BaseModel):
     total_results: int
     embedding_time_ms: float
     search_time_ms: float
+    query_embedding: list[float] | None = None
 
 
 class StatsResponse(BaseModel):

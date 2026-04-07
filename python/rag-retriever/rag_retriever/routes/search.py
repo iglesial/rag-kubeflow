@@ -78,4 +78,5 @@ async def search(
         total_results=len(results),
         embedding_time_ms=round(embedding_time_ms, 2),
         search_time_ms=round(search_time_ms, 2),
+        query_embedding=query_embedding,
     )
