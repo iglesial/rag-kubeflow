@@ -1,8 +1,12 @@
 """Retrieval quality metrics: recall@k and MRR."""
 
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, computed_field
+
+if TYPE_CHECKING:
+    from eval_retriever.eval_loader import EvalSample
 
 DEFAULT_KS: tuple[int, ...] = (1, 3, 5)
 
@@ -15,6 +19,8 @@ class Query(BaseModel):
     ----------
     query_id : str
         Identifier of the query in the eval set.
+    query : str
+        The raw query text as it was sent to the retriever.
     expected_document : str
         Document filename the query was expected to retrieve.
     retrieved_documents : tuple[str, ...]
@@ -25,6 +31,7 @@ class Query(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     query_id: str
+    query: str
     expected_document: str
     retrieved_documents: tuple[str, ...]
 
@@ -72,6 +79,36 @@ class Query(BaseModel):
             msg = f"k must be >= 1, got {k}"
             raise ValueError(msg)
         return self.expected_document in self.retrieved_documents[:k]
+
+    @classmethod
+    def from_sample(
+        cls,
+        sample: "EvalSample",
+        retrieved_documents: Sequence[str],
+    ) -> "Query":
+        """
+        Build a scored Query from an eval sample and the retriever's response.
+
+        Parameters
+        ----------
+        sample : EvalSample
+            The ground-truth eval sample this Query scores.
+        retrieved_documents : Sequence[str]
+            Ranked document names returned by the retriever,
+            highest-scoring first.
+
+        Returns
+        -------
+        Query
+            A frozen scored Query carrying the eval metadata and the
+            retrieved documents as a tuple.
+        """
+        return cls(
+            query_id=sample.id,
+            query=sample.query,
+            expected_document=sample.expected_document,
+            retrieved_documents=tuple(retrieved_documents),
+        )
 
     @staticmethod
     def aggregate(

@@ -41,7 +41,7 @@ class App:
         results_dir = Path(task_inputs.results_dir)
         results_dir.mkdir(parents=True, exist_ok=True)
         results_csv = results_dir / f"results_{task_inputs.approach_tag}.csv"
-        self._write_results_csv(results_csv, samples, queries)
+        self._write_results_csv(results_csv, queries)
 
         self._log_to_mlflow(
             metrics=metrics,
@@ -96,13 +96,7 @@ class App:
                 print(f"[{idx}/{len(samples)}] retriever error for id={sample.id}: {exc}")
                 retrieved = []
 
-            queries.append(
-                Query(
-                    query_id=sample.id,
-                    expected_document=sample.expected_document,
-                    retrieved_documents=tuple(retrieved),
-                )
-            )
+            queries.append(Query.from_sample(sample, retrieved))
             if idx % 25 == 0:
                 print(f"  scored {idx}/{len(samples)}")
         return queries, failures
@@ -110,7 +104,6 @@ class App:
     def _write_results_csv(
         self,
         path: Path,
-        samples: list[EvalSample],
         queries: list[Query],
     ) -> None:
         """
@@ -120,10 +113,9 @@ class App:
         ----------
         path : Path
             Output CSV path.
-        samples : list[EvalSample]
-            The eval samples, zipped with ``queries`` by index.
         queries : list[Query]
-            The scored queries.
+            The scored queries. Each carries its own metadata and
+            retrieval result — no external sample list needed.
         """
         with path.open("w", encoding="utf-8", newline="") as fp:
             writer = csv.writer(fp)
@@ -139,12 +131,12 @@ class App:
                     "reciprocal_rank",
                 ]
             )
-            for sample, query in zip(samples, queries, strict=True):
+            for query in queries:
                 writer.writerow(
                     [
-                        sample.id,
-                        sample.query,
-                        sample.expected_document,
+                        query.query_id,
+                        query.query,
+                        query.expected_document,
                         "|".join(query.retrieved_documents),
                         int(query.hit_at(1)),
                         int(query.hit_at(3)),
