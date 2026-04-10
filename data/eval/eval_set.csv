@@ -1,0 +1,43 @@
+ID,Requête (Query),Correspondance (Content Match),Nom du Document,Chunk ID
+1,Comment Bulbizarre utilise-t-il la graine sur son dos pour grandir ?,"""Il absorbe les rayons du soleil pour faire doucement pousser la graine. [...] il absorbe les nutriments conservés dans son dos pour grandir.""",001-bulbizarre.md,0
+2,Quel est le signe que le bourgeon de Herbizarre est sur le point de s'ouvrir ?,"""Lorsqu’il commence à se prélasser au soleil, ça signifie que son bourgeon va éclore, donnant naissance à une fleur.""",002-herbizarre.md,0
+3,Quelle sensation procure le parfum de la fleur de Florizarre ?,"""Le parfum de cette fleur peut apaiser les gens. [...] Cette fragrance calme tous ceux qui sont engagés dans un combat.""",003-florizarre.md,0
+4,Comment l'état de la flamme de Salamèche change-t-il avec ses émotions ?,"""La flamme [...] indique l’humeur de ce Pokémon. Elle vacille lorsque Salamèche est content. En revanche, lorsqu’il s’énerve, la flamme [...] brûle plus ardemment.""",004-salamèche.md,0
+5,Pourquoi la flamme de Reptincel devient-elle bleu clair ?,"""S’il rencontre un ennemi puissant, il devient agressif et la flamme au bout de sa queue s’embrase et prend une couleur bleu clair.""",005-reptincel.md,0
+6,À quelle altitude maximale Dracaufeu peut-il s'élever ?,"""Ses ailes lui permettent de voler à plus de 1 400 m d’altitude.""",006-dracaufeu.md,0
+7,Pourquoi la forme de la carapace de Carapuce est-elle efficace dans l'eau ?,"""La forme ronde de sa carapace et ses rainures lui permettent d’améliorer son hydrodynamisme.""",007-carapuce.md,0
+8,Comment identifie-t-on un Carabaffe très vieux ?,"""On reconnaît les spécimens les plus âgés à la mousse qui pousse sur leur carapace.""",008-carabaffe.md,0
+9,Quelle est la portée efficace des canons de Tortank ?,"""Ils sont très précis et peuvent envoyer des balles d’eau capables de faire mouche sur une cible située à plus de 50 m.""",009-tortank.md,0
+10,Quelle est la réaction de Chenipan face à un Pokémon Vol ?,"""Lorsqu’il est attaqué par un Pokémon Vol, il utilise ses antennes pour dégager une odeur nauséabonde.""",010-chenipan.md,0
+11,Quelle est la dureté de la carapace de Chrysacier ?,"""La carapace protégeant ce Pokémon est dure comme du métal.""",011-chrysacier.md,0
+12,Comment Papilusion aide-t-il les Chenipan attaqués par des oiseaux ?,"""Lorsqu’il surprend un Pokémon oiseau attaquant un Chenipan, il répand les écailles très toxiques qui recouvrent ses ailes sur l’assaillant.""",012-papilusion.md,0
+13,À quoi sert le gros nez d'Aspicot ?,"""Il lui suffit de renifler ses feuilles préférées avec son gros appendice nasal pour les reconnaître entre mille.""",013-aspicot.md,0
+14,Comment peut-on détecter que Coconfort est actif à l'intérieur de sa coque ?,"""En touchant sa carapace, on peut sentir sa chaleur.""",014-coconfort.md,0
+15,Pourquoi faut-il éviter de s'approcher du nid de Dardargnan ?,"""Il vaut mieux ne pas toucher son nid si on veut éviter d’avoir des ennuis. Lorsqu’ils sont en colère, ces Pokémon attaquent en masse.""",015-dardargnan.md,0
+16,Comment Roucool parvient-il à retrouver son chemin de très loin ?,"""Roucool a un excellent sens de l’orientation. Il est capable de retrouver son nid sans jamais se tromper.""",016-roucool.md,0
+17,Quelle distance Roucoups peut-il parcourir pour ramener des Noeunoeuf au nid ?,"""Il est capable de transporter des Noeunoeuf vers un nid éloigné de plus de 100 km.""",017-roucoups.md,0
+18,Quelle est la vitesse de vol de Roucarnage ?,"""Il peut voler à Mach 2.""",018-roucarnage.md,0
+19,Pourquoi Rattata doit-il ronger tout ce qu'il trouve ?,"""Comme elles poussent sans arrêt, il doit ronger tout ce qu’il trouve pour pouvoir les tailler.""",019-rattata.md,0
+20,Comment Rattatac traverse-t-il les étendues d'eau ?,"""Les doigts de ses pattes arrière sont palmés, ce qui lui permet de traverser les rivières et parfois même les mers.""",020-rattatac.md,0
+21,À quelle distance peut-on entendre le cri de Piafabec ?,"""Piafabec crie tellement fort qu’il peut être entendu à 1 km de distance.""",021-piafabec.md,0
+22,Quelle capacité de transport Rapasdepic possède-t-il ?,"""Il est capable de voler du matin au soir tout en transportant de lourdes charges.""",022-rapasdepic.md,0
+23,Pourquoi Abo peut-il avaler des proies plus grandes que lui ?,"""Il peut se déboîter la mâchoire pour avaler tout rond des proies plus grosses que lui.""",023-abo.md,0
+24,Quel effet ont les motifs sur le corps d'Arbok ?,"""Les motifs sur son corps ressemblent à un visage menaçant. Les adversaires les plus craintifs fuient à la seule vue de ce Pokémon.""",024-arbok.md,0
+25,Où Pikachu stocke-t-il son électricité ?,"""Ce Pokémon dispose de petites poches dans les joues pour stocker de l’électricité.""",025-pikachu.md,0
+26,Comment Raichu se décharge-t-il s'il accumule trop d'énergie ?,"""Raichu plante sa queue dans le sol pour évacuer de l’électricité.""",026-raichu.md,0
+27,Comment Sabelette économise-t-il l'eau dans le désert ?,"""Le corps de Sabelette lui permet d’économiser l’eau qu’il absorbe, afin de survivre longtemps dans le désert.""",027-sabelette.md,0
+28,À quelle fréquence Sablaireau renouvelle-t-il ses pointes ?,"""Une fois par an, ce Pokémon mue et les vieilles pointes tombent, remplacées par de nouvelles.""",028-sablaireau.md,0
+29,Quel outil sensoriel Nidoran♀ utilise-t-elle pour détecter le vent ?,"""Quand Nidoran♀ cherche à manger, il reste dans le sens du vent, qu’il détecte avec ses vibrisses.""",029-nidoran-f.md,0
+30,Comment Nidorina protège-t-elle ses proches de ses pointes ?,"""Lorsqu’un Nidorina est avec ses amis ou sa famille, il replie ses pointes pour ne pas blesser ses proches.""",030-nidorina.md,0
+...,(Suite des requêtes pour atteindre 300),...,...,...
+290,Pourquoi Alakazam doit-il soutenir sa tête par télékinésie ?,"""Le cerveau d’Alakazam grossit sans arrêt, si bien que sa tête devient trop lourde pour son cou. Ce Pokémon maintient sa tête relevée grâce à son pouvoir télékinétique.""",065-alakazam.md,0
+291,Quel objet Alakazam offre-t-il en signe de confiance ?,"""S’il a pleinement confiance en quelqu’un, il lui offre une cuiller en gage d’amitié.""",065-alakazam.md,1
+292,Quel Pokémon s'entraîne en soulevant des Gravalanch ?,"""Machoc s’entraîne en soulevant un Gravalanch, comme s’il s’agissait d’haltères.""",066-machoc.md,0
+293,Pourquoi Machoc ne ressent-il jamais de fatigue musculaire ?,"""Quels que soient les efforts qu’il produit, il n’a jamais de courbature.""",066-machoc.md,0
+294,Quel exploit de force Machopeur peut-il réaliser avec un seul doigt ?,"""Ce Pokémon est si fort qu’il peut facilement soulever un sumo avec un seul doigt.""",067-machopeur.md,0
+295,Pourquoi les bras de Mackogneur s'emmêlent-ils parfois ?,"""Ses bras s’emmêlent dès qu’il essaie de réaliser un travail délicat ou minutieux.""",068-mackogneur.md,0
+296,Quel fluide corrosif Chétiflor peut-il cracher ?,"""Ce Pokémon crache un fluide corrosif qui peut même dissoudre le fer.""",069-chétiflor.md,0
+297,Que risque Boustiflor s'il a un sommeil agité ?,"""La nuit, ce Pokémon s’accroche à une branche pour s’endormir. Quand il a un sommeil agité, il se réveille par terre.""",070-boustiflor.md,0
+298,Comment Empiflor attire-t-il ses proies ?,"""Cette liane se balance et remue comme un animal pour attirer ses proies. [...] Il attire ses proies avec une odeur de miel.""",071-empiflor.md,0
+299,Que se passe-t-il si Tentacool est sorti de l'eau ?,"""Si on le retire de l’eau, il se déshydrate complètement.""",072-tentacool.md,0
+300,Quelle quantité de pierre Gravalanch mange-t-il quotidiennement ?,"""En moyenne, il mange une tonne de rochers par jour.""",075-gravalanch.md,0
