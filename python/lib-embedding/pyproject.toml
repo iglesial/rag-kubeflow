@@ -11,6 +11,11 @@ dependencies = [
     "sentence-transformers>=3.0.0",
 ]
 
+[project.optional-dependencies]
+mlflow = [
+    "mlflow>=2.16.0",
+]
+
 [project.scripts]
 main = "lib_embedding.main:main"
 
