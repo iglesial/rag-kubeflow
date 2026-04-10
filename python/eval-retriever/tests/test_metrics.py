@@ -96,16 +96,21 @@ def test_aggregate_mixed_queries() -> None:
         ),
     ]
     metrics = Query.aggregate(queries, ks=DEFAULT_KS)
-    assert metrics["recall@1"] == pytest.approx(1 / 3)
-    assert metrics["recall@3"] == pytest.approx(2 / 3)
-    assert metrics["recall@5"] == pytest.approx(2 / 3)
+    assert metrics["recall_at_1"] == pytest.approx(1 / 3)
+    assert metrics["recall_at_3"] == pytest.approx(2 / 3)
+    assert metrics["recall_at_5"] == pytest.approx(2 / 3)
     assert metrics["mrr"] == pytest.approx((1.0 + 1 / 3 + 0.0) / 3)
 
 
 def test_aggregate_empty_queries() -> None:
     """Aggregate returns zero metrics for an empty query list."""
     metrics = Query.aggregate([], ks=DEFAULT_KS)
-    assert metrics == {"recall@1": 0.0, "recall@3": 0.0, "recall@5": 0.0, "mrr": 0.0}
+    assert metrics == {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "mrr": 0.0,
+    }
 
 
 def test_aggregate_empty_ks_raises() -> None:

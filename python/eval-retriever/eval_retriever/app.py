@@ -97,7 +97,7 @@ class App:
                 retrieved = []
 
             queries.append(Query.from_sample(sample, retrieved))
-            if idx % 25 == 0:
+            if idx % 25 == 0 or idx == len(samples):
                 print(f"  scored {idx}/{len(samples)}")
         return queries, failures
 

@@ -132,9 +132,9 @@ def test_run_scores_queries_and_logs_to_mlflow(
     # Metrics computed correctly:
     # Hit@1: 1/3 (only Pikachu); Hit@3: 2/3; Hit@5: 2/3; MRR: (1 + 0.5 + 0)/3
     metrics = mock_mlflow.log_metrics.call_args.args[0]
-    assert metrics["recall@1"] == pytest.approx(1 / 3)
-    assert metrics["recall@3"] == pytest.approx(2 / 3)
-    assert metrics["recall@5"] == pytest.approx(2 / 3)
+    assert metrics["recall_at_1"] == pytest.approx(1 / 3)
+    assert metrics["recall_at_3"] == pytest.approx(2 / 3)
+    assert metrics["recall_at_5"] == pytest.approx(2 / 3)
     assert metrics["mrr"] == pytest.approx((1.0 + 0.5 + 0.0) / 3)
 
     # Results CSV was created with a row per query
@@ -157,7 +157,7 @@ def test_run_scores_queries_and_logs_to_mlflow(
     # Summary was printed
     out = capsys.readouterr().out
     assert "=== baseline ===" in out
-    assert "recall@1" in out
+    assert "recall_at_1" in out
 
 
 def test_run_records_retriever_errors_as_empty_results(
@@ -194,7 +194,7 @@ def test_run_records_retriever_errors_as_empty_results(
     assert params["n_failures"] == 3
 
     metrics = mock_mlflow.log_metrics.call_args.args[0]
-    assert metrics["recall@1"] == 0.0
+    assert metrics["recall_at_1"] == 0.0
     assert metrics["mrr"] == 0.0
 
     out = capsys.readouterr().out

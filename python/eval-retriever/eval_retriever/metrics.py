@@ -128,8 +128,10 @@ class Query(BaseModel):
         Returns
         -------
         dict[str, float]
-            Mapping with keys ``recall@<k>`` for each ``k`` in ``ks`` and
-            ``mrr``. Returns all zeros when ``queries`` is empty.
+            Mapping with keys ``recall_at_<k>`` for each ``k`` in ``ks`` and
+            ``mrr``. Returns all zeros when ``queries`` is empty. Metric
+            names use underscores rather than ``@`` to satisfy MLFlow's
+            naming rules (which reject ``@``).
 
         Raises
         ------
@@ -144,13 +146,13 @@ class Query(BaseModel):
             raise ValueError(msg)
 
         if not queries:
-            zeros: dict[str, float] = {f"recall@{k}": 0.0 for k in ks}
+            zeros: dict[str, float] = {f"recall_at_{k}": 0.0 for k in ks}
             zeros["mrr"] = 0.0
             return zeros
 
         n = len(queries)
         metrics: dict[str, float] = {
-            f"recall@{k}": sum(1.0 for q in queries if q.hit_at(k)) / n for k in ks
+            f"recall_at_{k}": sum(1.0 for q in queries if q.hit_at(k)) / n for k in ks
         }
         metrics["mrr"] = sum(q.score for q in queries) / n
         return metrics
