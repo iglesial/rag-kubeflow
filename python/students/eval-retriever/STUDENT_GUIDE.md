@@ -1,24 +1,22 @@
-# Student exercise: build the eval-retriever
+# Exercice étudiant : construire l'eval-retriever
 
-## The big picture
+## Vue d'ensemble
 
-Your job is to **measure how good a RAG retrieval system is** and log each
-measurement to MLFlow so you can compare different configurations. You'll
-run this harness against three different retriever setups during the
-session: the baseline chunker, the name-injected chunker, and (later) the
-fine-tuned embedder. MLFlow will hold all three runs and let you compare
-them in one view.
+Votre mission est de **mesurer la qualité d'un système de retrieval RAG** et de consigner chaque
+mesure dans MLFlow pour pouvoir comparer différentes configurations. Vous ferez tourner ce
+harnais contre trois configurations de retriever pendant la session : le chunker de base, le
+chunker avec injection de noms, et (plus tard) l'embedder fine-tuné. MLFlow conservera les
+trois runs et vous permettra de les comparer en un seul coup d'œil.
 
-Most of the package is already written for you (CSV loading, HTTP client,
-orchestration, error handling). Your job is to write the **two interesting
-parts**:
+La majeure partie du package est déjà écrite (chargement CSV, client HTTP, orchestration,
+gestion des erreurs). Votre travail consiste à écrire les **deux parties intéressantes** :
 
-1. The **metric definitions** themselves — recall@k and MRR.
-2. The **MLFlow logging** — turning your results into a tracked run.
+1. Les **définitions des métriques** elles-mêmes — recall@k et MRR.
+2. Le **logging MLFlow** — transformer vos résultats en un run traçable.
 
-That's it. ~30 lines of code total across two files.
+C'est tout. ~30 lignes de code en tout, réparties sur deux fichiers.
 
-## Setup
+## Installation
 
 ```bash
 cd python/students/eval-retriever
@@ -26,37 +24,37 @@ just install-dev
 just test-metrics -v
 ```
 
-You should see ~7 test failures with `NotImplementedError`. That's your
-starting point. Your goal: **turn every failing test green**.
+Vous devriez voir ~7 échecs de tests avec `NotImplementedError`. C'est votre point de départ.
+Votre objectif : **faire passer tous les tests au vert**.
 
-## Task 1 — implement `Query.score` and `Query.aggregate`
+## Tâche 1 — implémenter `Query.score` et `Query.aggregate`
 
-File: `eval_retriever/metrics.py`
+Fichier : `eval_retriever/metrics.py`
 
-### What's already there
+### Ce qui est déjà là
 
-- The `Query` pydantic model with fields `query_id`, `query`,
+- Le modèle pydantic `Query` avec les champs `query_id`, `query`,
   `expected_document`, `retrieved_documents`.
-- `Query.hit_at(k)` — a helper that tells you whether the expected
-  document is within the top k retrieved. **Use this.**
-- `Query.from_sample(sample, retrieved)` — a constructor helper. You
-  don't need to touch it.
-- Input validation in `aggregate` (the `ks must be non-empty` and
-  `all k values must be >= 1` checks). Already done for you.
+- `Query.hit_at(k)` — un helper qui indique si le document attendu se trouve dans
+  les k premiers résultats. **Utilisez-le.**
+- `Query.from_sample(sample, retrieved)` — un helper de construction. Vous n'avez
+  pas besoin d'y toucher.
+- La validation des entrées dans `aggregate` (les vérifications `ks must be non-empty`
+  et `all k values must be >= 1`). Déjà fait pour vous.
 
-### What you need to write
+### Ce que vous devez écrire
 
-#### 1a. `Query.score` — the per-query reciprocal rank
+#### 1a. `Query.score` — le rang réciproque par requête
 
-It's a `@computed_field`, so you implement it as a property that returns
-a float. The rule:
+C'est un `@computed_field`, vous l'implémentez donc comme une propriété qui retourne
+un float. La règle :
 
-- Find the **1-based rank** of `self.expected_document` in
-  `self.retrieved_documents` (first hit wins).
-- Return `1.0 / rank`.
-- If the expected document isn't in the list at all, return `0.0`.
+- Trouvez le **rang à base 1** de `self.expected_document` dans
+  `self.retrieved_documents` (la première occurrence compte).
+- Retournez `1.0 / rang`.
+- Si le document attendu n'est pas dans la liste, retournez `0.0`.
 
-Examples:
+Exemples :
 
 | retrieved_documents                          | expected        | score       |
 | -------------------------------------------- | --------------- | ----------- |
@@ -66,13 +64,13 @@ Examples:
 | `("a.md", "b.md", "c.md")`                   | `"z.md"`        | `0.0`       |
 | `()`                                         | `"a.md"`        | `0.0`       |
 
-**Hint:** `for rank, doc in enumerate(self.retrieved_documents, start=1):`
-is a clean way to get 1-based ranks.
+**Indice :** `for rank, doc in enumerate(self.retrieved_documents, start=1):`
+est une façon propre d'obtenir des rangs à base 1.
 
-#### 1b. `Query.aggregate(queries, ks)` — the batch metrics
+#### 1b. `Query.aggregate(queries, ks)` — les métriques agrégées
 
-A `@staticmethod` that takes a list of `Query` objects and a list of
-cutoff values `ks`, and returns a dict of metrics:
+Un `@staticmethod` qui prend une liste d'objets `Query` et une liste de seuils `ks`,
+et retourne un dictionnaire de métriques :
 
 ```python
 {
@@ -83,144 +81,137 @@ cutoff values `ks`, and returns a dict of metrics:
 }
 ```
 
-Rules:
-- **`recall_at_k`** for each `k` in `ks`: fraction of queries where the
-  expected document appeared in the top k. Use `query.hit_at(k)`.
-- **`mrr`** (mean reciprocal rank): average of `query.score` across
-  all queries.
-- **Metric names use underscores**, not `@`. MLFlow rejects metric names
-  with `@` characters, so use `recall_at_k` not `recall@k`.
-- **Empty queries list**: return all zeros for each metric plus `mrr`.
+Règles :
+- **`recall_at_k`** pour chaque `k` dans `ks` : fraction des requêtes où le document
+  attendu est apparu dans les k premiers. Utilisez `query.hit_at(k)`.
+- **`mrr`** (mean reciprocal rank) : moyenne de `query.score` sur toutes les requêtes.
+- **Les noms de métriques utilisent des underscores**, pas `@`. MLFlow rejette les `@`
+  dans les noms de métriques, utilisez donc `recall_at_k` et non `recall@k`.
+- **Liste de requêtes vide** : retournez des zéros pour chaque métrique et pour `mrr`.
 
-### Run the tests as you go
+### Lancez les tests au fur et à mesure
 
 ```bash
 just test-metrics -v
 ```
 
-Each test tells you exactly what's expected. Fix one, re-run, watch it
-turn green. This is your **instant feedback loop** — don't skip it.
+Chaque test vous indique exactement ce qui est attendu. Corrigez un test, relancez,
+regardez-le passer au vert. C'est votre **boucle de feedback instantanée** — ne la
+sautez pas.
 
-When all 10 metrics tests pass, you're done with task 1. Move on.
+Quand les 10 tests de métriques passent, vous avez terminé la tâche 1. Passez à la suite.
 
-## Task 2 — implement `App._log_to_mlflow`
+## Tâche 2 — implémenter `App._log_to_mlflow`
 
-File: `eval_retriever/app.py`
+Fichier : `eval_retriever/app.py`
 
-Once your metrics work, you need to persist them somewhere you can
-**compare runs later**. That's what MLFlow does.
+Une fois vos métriques fonctionnelles, vous devez les persister quelque part pour pouvoir
+**comparer les runs plus tard**. C'est le rôle de MLFlow.
 
-### What's already there
+### Ce qui est déjà là
 
-Everything else in `app.py`: the orchestration loop, the retriever
-client, the CSV writer, the summary print. You just need to fill in
-**one method** — `_log_to_mlflow` — which is called at the end of
-`run()` with the computed metrics + results CSV path.
+Tout le reste dans `app.py` : la boucle d'orchestration, le client retriever, l'écriture
+CSV, l'affichage du résumé. Vous devez uniquement remplir **une méthode** — `_log_to_mlflow`
+— qui est appelée à la fin de `run()` avec les métriques calculées et le chemin du CSV.
 
-### What you need to write
+### Ce que vous devez écrire
 
-Look at the docstring of `_log_to_mlflow` for the exact steps. The
-short version:
+Regardez la docstring de `_log_to_mlflow` pour les étapes exactes. En résumé :
 
-1. **Tell MLFlow where the server is**:
+1. **Indiquez à MLFlow où se trouve le serveur** :
    ```python
    mlflow.set_tracking_uri(task_inputs.mlflow_tracking_uri)
    mlflow.set_experiment(task_inputs.experiment_name)
    ```
 
-2. **Open a run** (use a `with` block):
+2. **Ouvrez un run** (utilisez un bloc `with`) :
    ```python
    with mlflow.start_run(run_name=task_inputs.approach_tag):
        ...
    ```
 
-3. **Inside the run**, log four things:
-   - A **tag**: `approach` = `task_inputs.approach_tag`
-     (use `mlflow.set_tag(key, value)`)
-   - **Params** (dict): `retriever_url`, `top_k`, `similarity_threshold`,
+3. **À l'intérieur du run**, loggez quatre choses :
+   - Un **tag** : `approach` = `task_inputs.approach_tag`
+     (utilisez `mlflow.set_tag(key, value)`)
+   - Des **params** (dict) : `retriever_url`, `top_k`, `similarity_threshold`,
      `eval_csv_path`, `n_samples`, `n_failures`
-     (use `mlflow.log_params(dict)`)
-   - **Metrics** (dict): pass the `metrics` argument directly
-     (use `mlflow.log_metrics(dict)`)
-   - **Artifact**: the `results_csv` file
-     (use `mlflow.log_artifact(str(results_csv))`)
+     (utilisez `mlflow.log_params(dict)`)
+   - Des **métriques** (dict) : passez l'argument `metrics` directement
+     (utilisez `mlflow.log_metrics(dict)`)
+   - Un **artifact** : le fichier `results_csv`
+     (utilisez `mlflow.log_artifact(str(results_csv))`)
 
-### Run the app tests
+### Lancez les tests de l'application
 
 ```bash
 just test-app -v
 ```
 
-The `test_run_scores_queries_and_logs_to_mlflow` test asserts every
-MLFlow call was made with the right arguments. When it passes, you're
-done.
+Le test `test_run_scores_queries_and_logs_to_mlflow` vérifie que chaque appel MLFlow
+a été fait avec les bons arguments. Quand il passe, vous avez terminé.
 
-## End-to-end run
+## Run de bout en bout
 
-Once both tasks are done, run the harness against the real stack:
+Une fois les deux tâches terminées, lancez le harnais contre la vraie stack :
 
 ```bash
-# (Your instructor will have postgres, mlflow, and the retriever running)
+# (Votre formateur aura démarré postgres, mlflow et le retriever)
 just run
 ```
 
-Then open http://localhost:5000 in a browser, click the
-**`rag-retrieval-comparison`** experiment, and find your `baseline` run.
-You should see:
+Puis ouvrez http://localhost:5000 dans un navigateur, cliquez sur l'expérience
+**`rag-retrieval-comparison`** et trouvez votre run `baseline`. Vous devriez voir :
 
-- Parameters you logged
-- Metrics (`recall_at_1`, `recall_at_3`, `recall_at_5`, `mrr`)
-- An artifact called `results_baseline.csv` — click it to see per-query
-  hits/misses
+- Les paramètres que vous avez loggés
+- Les métriques (`recall_at_1`, `recall_at_3`, `recall_at_5`, `mrr`)
+- Un artifact appelé `results_baseline.csv` — cliquez dessus pour voir les hits/miss
+  par requête
 
-## Doing the full session comparison
+## Comparaison complète de la session
 
-Once you've confirmed the baseline works, your instructor will walk you
-through re-running the pipeline with name injection:
+Une fois le baseline validé, votre formateur vous guidera pour relancer le pipeline
+avec injection de noms :
 
 ```bash
-# Set a different tag so MLFlow keeps your runs separate
-# Windows PowerShell:
+# Définissez un tag différent pour que MLFlow garde vos runs séparés
+# Windows PowerShell :
 $env:APPROACH_TAG = "name-injection"
 just run
 Remove-Item env:APPROACH_TAG
 ```
 
-Then in the MLFlow UI, **select both runs** and click **Compare**. You
-should see `recall_at_k` jump — that's the "cheap data fix beats the
-ML fix" moment.
+Puis dans l'interface MLFlow, **sélectionnez les deux runs** et cliquez sur **Compare**.
+Vous devriez voir le `recall_at_k` progresser — c'est le moment « un correctif de données
+bon marché bat le correctif ML ».
 
-## Hints, gotchas, and common mistakes
+## Conseils, pièges et erreurs fréquentes
 
-- **"My metrics test says 'expected recall_at_1 but got recall@1'"**:
-  read the "metric names use underscores" rule again. Use
-  `f"recall_at_{k}"` not `f"recall@{k}"`.
+- **"Mon test de métriques dit 'expected recall_at_1 but got recall@1'"** :
+  relisez la règle sur les underscores. Utilisez `f"recall_at_{k}"` et non `f"recall@{k}"`.
 
-- **"NotImplementedError in test_hit_at_invalid_k_raises"**: don't
-  panic, this test passes without you implementing anything. If it
-  fails, you probably deleted the `hit_at` helper by accident.
+- **"NotImplementedError dans test_hit_at_invalid_k_raises"** : ne paniquez pas, ce test
+  passe sans que vous n'implémentiez quoi que ce soit. S'il échoue, vous avez probablement
+  supprimé le helper `hit_at` par accident.
 
-- **"test_aggregate_empty_ks_raises fails with ValueError, not
-  NotImplementedError"**: the input validation is already done for
-  you at the top of `aggregate`. Don't remove it. Put your logic
-  after the existing `if not ks:` / `if any(k < 1 ...)` checks.
+- **"test_aggregate_empty_ks_raises échoue avec ValueError, pas NotImplementedError"** :
+  la validation des entrées est déjà faite pour vous en haut de `aggregate`. Ne la supprimez
+  pas. Placez votre logique après les vérifications `if not ks:` / `if any(k < 1 ...)`.
 
-- **"MLFlow run shows up but has no metrics"**: you probably caught an
-  exception and returned early. Make sure `log_metrics` is actually
-  reached.
+- **"Le run MLFlow apparaît mais n'a pas de métriques"** : vous avez probablement levé une
+  exception et êtes sorti tôt. Assurez-vous que `log_metrics` est bien atteint.
 
-- **"mlflow.start_run() returns something I don't understand"**: treat
-  it as a context manager. `with mlflow.start_run(run_name=...) as run:`
-  just opens and closes a run scope.
+- **"mlflow.start_run() retourne quelque chose que je ne comprends pas"** : traitez-le comme
+  un context manager. `with mlflow.start_run(run_name=...) as run:` ouvre et ferme simplement
+  un scope de run.
 
-- **"Can I use a `for` loop inside aggregate?"**: yes. Use whatever is
-  clearest. A dict comprehension is fine but not required.
+- **"Puis-je utiliser une boucle `for` dans aggregate ?"** : oui. Utilisez ce qui est le plus
+  clair. Une dict comprehension fonctionne aussi mais n'est pas obligatoire.
 
-## Bonus exercise (if you finish early)
+## Exercice bonus (si vous avez terminé en avance)
 
-Add a **per-difficulty breakdown** to `aggregate`. Give it an optional
-parameter `group_by: Callable[[Query], str] | None = None` and, when
-provided, return a nested dict like:
+Ajoutez un **découpage par difficulté** à `aggregate`. Donnez-lui un paramètre optionnel
+`group_by: Callable[[Query], str] | None = None` et, lorsqu'il est fourni, retournez un
+dict imbriqué comme :
 
 ```python
 {
@@ -229,13 +220,11 @@ provided, return a nested dict like:
 }
 ```
 
-This requires extending the eval CSV with a `difficulty` column and
-wiring it through to `EvalSample`. Talk to your instructor about how
-to structure it.
+Cela nécessite d'ajouter une colonne `difficulty` au CSV d'évaluation et de la câbler
+jusqu'à `EvalSample`. Parlez à votre formateur de la façon de le structurer.
 
-## Where to find the reference solution
+## Où trouver la solution de référence
 
-Your instructor has a reference implementation at
-`python/eval-retriever/` (one level up). Try to complete the exercise
-without peeking — but if you're stuck for more than 10 minutes, the
-reference is there.
+Votre formateur dispose d'une implémentation de référence dans
+`python/eval-retriever/` (un niveau au-dessus). Essayez de terminer l'exercice sans
+regarder — mais si vous êtes bloqué depuis plus de 10 minutes, la référence est là.
