@@ -27,16 +27,22 @@ Interface accessible sur `http://localhost:5000`.
 
 ## 2. Modifier le chunker pour inclure le nom du Pokémon
 
-Le flag `--inject_document_name` est déjà implémenté dans `rag-loader`. Il préfixe chaque
-chunk par `Pokémon: {nom}` extrait du nom de fichier (`025-pikachu.md` → `pikachu`).
+C'est le premier exercice de la session. Les étudiants travaillent dans
+`python/students/rag-loader/` où 5 tests échouent au départ.
 
-Pour générer les chunks enrichis **sans écraser les chunks de base**, on pointe vers un
-répertoire de sortie différent :
+Deux modifications à faire :
+
+1. **`task_inputs.py`** — ajouter le champ `inject_document_name: bool` (défaut `False`)
+2. **`app.py`** — utiliser ce flag pour préfixer chaque chunk avec
+   `f"Pokémon: {pokemon_name}\n\n{content}"`. La fonction `_extract_pokemon_name`
+   est déjà présente dans le fichier.
+
+Une fois les tests au vert, générer les chunks enrichis **sans écraser les chunks de base**
+en pointant vers un répertoire de sortie différent :
 
 ```bash
-cd python/rag-loader
-uv run main \
-  --input_dir ../../data/documents \
+cd python/students/rag-loader
+uv run rag_loader/main.py \
   --output_dir ../../data/chunks-name-injection \
   --inject_document_name True
 ```
