@@ -7,29 +7,21 @@ comparaison de retrievers avec MLFlow.
 
 ## 1. Démarrer le serveur MLFlow
 
-MLFlow est déjà dans `docker-compose.yml`. Il suffit de le démarrer avec le reste de
-l'infrastructure :
+Lancer MLFlow avec `uvx` (pas besoin d'installer quoi que ce soit) :
 
 ```bash
-docker compose up -d
-```
-
-Ou uniquement MLFlow si PostgreSQL tourne déjà :
-
-```bash
-docker compose up -d mlflow
-```
-
-Vérifier que le serveur est prêt :
-
-```bash
-docker compose ps   # mlflow doit être "healthy"
+uvx mlflow server \
+  --host 0.0.0.0 \
+  --port 5000 \
+  --backend-store-uri sqlite:///mlflow.db \
+  --artifacts-destination ./mlruns \
+  --serve-artifacts
 ```
 
 Interface accessible sur `http://localhost:5000`.
 
-> Le backend SQLite (`mlflow.db`) supporte le Model Registry. Sans lui, les appels à
-> `mlflow.register_model()` échouent — ne pas changer le `backend-store-uri`.
+> Le backend SQLite (`mlflow.db`) est nécessaire pour le Model Registry. Sans lui, les
+> appels à `mlflow.register_model()` échouent.
 
 ---
 
