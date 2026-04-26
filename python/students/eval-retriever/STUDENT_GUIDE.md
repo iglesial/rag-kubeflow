@@ -80,8 +80,14 @@ et retourne un dictionnaire de métriques :
 
 Règles :
 - **`recall_at_k`** pour chaque `k` dans `ks` : fraction des requêtes où le document
-  attendu est apparu dans les k premiers. Utilisez `query.hit_at(k)`.
+  attendu est apparu dans les k premiers résultats. Mesure si le retriever *trouve*
+  le bon document, quelle que soit sa position exacte. Un `recall_at_1` élevé signifie
+  que le bon document arrive souvent en tête ; `recall_at_5` est plus indulgent.
+  Utilisez `query.hit_at(k)`.
 - **`mrr`** (mean reciprocal rank) : moyenne de `query.score` sur toutes les requêtes.
+  Tient compte de la *position* du bon document : arriver 1er vaut 1.0, 2e vaut 0.5,
+  3e vaut 0.33, etc. Un MRR proche de 1 signifie que le retriever place quasi
+  systématiquement le bon document en première position.
 - **Les noms de métriques utilisent des underscores**, pas `@`. MLFlow rejette les `@`
   dans les noms de métriques, utilisez donc `recall_at_k` et non `recall@k`.
 - **Liste de requêtes vide** : retournez des zéros pour chaque métrique et pour `mrr`.
