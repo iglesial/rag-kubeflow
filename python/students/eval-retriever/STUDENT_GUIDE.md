@@ -176,11 +176,8 @@ Une fois le baseline validé, votre formateur vous guidera pour relancer le pipe
 avec injection de noms :
 
 ```bash
-# Définissez un tag différent pour que MLFlow garde vos runs séparés
-# Windows PowerShell :
-$env:APPROACH_TAG = "name-injection"
-just run
-Remove-Item env:APPROACH_TAG
+# Passez le tag directement en argument CLI
+uv run eval_retriever/main.py --approach_tag "name-injection"
 ```
 
 Puis dans l'interface MLFlow, **sélectionnez les deux runs** et cliquez sur **Compare**.
