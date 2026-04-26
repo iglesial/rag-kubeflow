@@ -64,9 +64,6 @@ Exemples :
 | `("a.md", "b.md", "c.md")`                   | `"z.md"`        | `0.0`       |
 | `()`                                         | `"a.md"`        | `0.0`       |
 
-**Indice :** `for rank, doc in enumerate(self.retrieved_documents, start=1):`
-est une façon propre d'obtenir des rangs à base 1.
-
 #### 1b. `Query.aggregate(queries, ks)` — les métriques agrégées
 
 Un `@staticmethod` qui prend une liste d'objets `Query` et une liste de seuils `ks`,

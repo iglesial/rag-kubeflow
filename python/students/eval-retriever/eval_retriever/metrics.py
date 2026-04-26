@@ -46,9 +46,6 @@ class Query(BaseModel):
         ``self.retrieved_documents``. If the expected document isn't
         present, return ``0.0``.
 
-        Hint: ``for rank, doc in enumerate(self.retrieved_documents,
-        start=1):`` gives 1-based ranks.
-
         Returns
         -------
         float
