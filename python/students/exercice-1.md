@@ -55,23 +55,13 @@ just test-metrics -v   # doit être tout vert
 Implémenter `App._log_to_mlflow`. La docstring de la méthode liste les étapes exactes.
 En résumé :
 
-```python
-mlflow.set_tracking_uri(task_inputs.mlflow_tracking_uri)
-mlflow.set_experiment(task_inputs.experiment_name)
-
-with mlflow.start_run(run_name=task_inputs.approach_tag):
-    mlflow.set_tag("approach", task_inputs.approach_tag)
-    mlflow.log_params({
-        "retriever_url": task_inputs.retriever_url,
-        "top_k": task_inputs.top_k,
-        "similarity_threshold": task_inputs.similarity_threshold,
-        "eval_csv_path": task_inputs.eval_csv_path,
-        "n_samples": n_samples,
-        "n_failures": n_failures,
-    })
-    mlflow.log_metrics(metrics)
-    mlflow.log_artifact(str(results_csv))
-```
+1. Configurer le serveur et l'expérience avec `mlflow.set_tracking_uri` et `mlflow.set_experiment`
+2. Ouvrir un run avec `mlflow.start_run(run_name=...)` dans un bloc `with`
+3. À l'intérieur, logger avec :
+   - `mlflow.set_tag` — le tag `approach`
+   - `mlflow.log_params` — un dict avec `retriever_url`, `top_k`, `similarity_threshold`, `eval_csv_path`, `n_samples`, `n_failures`
+   - `mlflow.log_metrics` — les métriques calculées
+   - `mlflow.log_artifact` — le fichier CSV de résultats
 
 Vérifier :
 
