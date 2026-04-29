@@ -162,24 +162,8 @@ Une fois les deux tâches terminées, lancez le harnais contre la vraie stack :
 just run
 ```
 
-Puis ouvrez http://localhost:5000 dans un navigateur, cliquez sur l'expérience
-**`rag-retrieval-comparison`** et trouvez votre run `baseline`. Vous devriez voir :
+Ouvrez http://localhost:5000, cliquez sur l'expérience **`rag-retrieval-comparison`**
+et trouvez votre run `baseline`. Vous devriez voir les paramètres loggés, les métriques
+(`recall_at_1`, `recall_at_3`, `recall_at_5`, `mrr`) et l'artifact `results_baseline.csv`.
 
-- Les paramètres que vous avez loggés
-- Les métriques (`recall_at_1`, `recall_at_3`, `recall_at_5`, `mrr`)
-- Un artifact appelé `results_baseline.csv` — cliquez dessus pour voir les hits/miss
-  par requête
-
-## Comparaison complète de la session
-
-Une fois le baseline validé, votre formateur vous guidera pour relancer le pipeline
-avec injection de noms :
-
-```bash
-# Passez le tag directement en argument CLI
-uv run eval_retriever/main.py --approach_tag "name-injection"
-```
-
-Puis dans l'interface MLFlow, **sélectionnez les deux runs** et cliquez sur **Compare**.
-Vous devriez voir le `recall_at_k` progresser — c'est le moment « un correctif de données
-bon marché bat le correctif ML ».
+Passez ensuite à **l'exercice 2**.
