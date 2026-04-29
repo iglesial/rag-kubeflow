@@ -74,7 +74,7 @@ just test-app -v   # doit être tout vert
 ## Run baseline
 
 ```bash
-just run
+uv run eval_retriever/main.py
 ```
 
 Ouvrir **http://localhost:5000** → expérience `rag-retrieval-comparison` → run `baseline`.
