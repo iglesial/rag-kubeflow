@@ -31,14 +31,18 @@ Rang réciproque du document attendu dans la liste retournée.
 
 ### `aggregate(queries, ks)` (staticmethod)
 
-Retourner un dict avec :
+Retourner un dict avec les métriques agrégées sur l'ensemble des requêtes :
 
-| Clé | Valeur |
-|-----|--------|
-| `recall_at_1` | fraction des requêtes avec `hit_at(1) == True` |
-| `recall_at_3` | fraction des requêtes avec `hit_at(3) == True` |
-| `recall_at_5` | fraction des requêtes avec `hit_at(5) == True` |
-| `mrr` | moyenne de `query.score` sur toutes les requêtes |
+| Clé | Formule | Ce que ça mesure |
+|-----|---------|-----------------|
+| `recall_at_1` | fraction avec `hit_at(1) == True` | Le bon document arrive-t-il **en première position** ? |
+| `recall_at_3` | fraction avec `hit_at(3) == True` | Le bon document est-il dans le **top 3** ? |
+| `recall_at_5` | fraction avec `hit_at(5) == True` | Le bon document est-il dans le **top 5** ? |
+| `mrr` | moyenne de `query.score` | En moyenne, à quelle **position** se trouve le bon document ? |
+
+`recall_at_k` répond à « est-ce que le retriever *trouve* le bon document ? », sans se
+soucier de sa position exacte. `mrr` est plus exigeant : il pénalise les cas où le bon
+document est trouvé mais relégué en position 3 ou 4 plutôt qu'en tête.
 
 > **Important** : noms avec underscores (`recall_at_k`), pas `@`. MLFlow rejette les `@`.
 
