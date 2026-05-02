@@ -1,0 +1,67 @@
+# Justfile for the student eval-retriever exercise.
+# Run `just --list` to see all available commands.
+
+set shell := ["cmd", "/c"]
+
+# Default recipe to display help
+default:
+    @just --list
+
+# Install dependencies (production only)
+install:
+    uv sync --no-dev
+
+# Install all dependencies (including dev)
+install-dev:
+    uv sync
+
+# Run linter with auto-fix
+lint:
+    uv run ruff check --fix
+
+# Check code without fixing
+check:
+    uv run ruff check
+
+# Format code
+format:
+    uv run ruff format
+
+# Check formatting without fixing
+format-check:
+    uv run ruff format --check
+
+# Run type checker
+typecheck:
+    uv run mypy eval_retriever/
+
+# Run all checks (lint, format, typecheck)
+check-all: check format-check typecheck
+
+# Run tests — your feedback loop while implementing
+test:
+    uv run pytest
+
+# Run tests with coverage
+test-cov:
+    uv run pytest --cov=eval_retriever --cov-report=html --cov-report=term
+
+# Run tests in verbose mode — easier to read failures
+test-verbose:
+    uv run pytest -v
+
+# Run only the metrics tests (start here)
+test-metrics:
+    uv run pytest tests/test_metrics.py -v
+
+# Run only the app tests (unlocks after metrics is done)
+test-app:
+    uv run pytest tests/test_app.py -v
+
+# Clean build artifacts
+clean:
+    rm -rf dist/ build/ *.egg-info .pytest_cache .ruff_cache .mypy_cache htmlcov/ .coverage
+
+# Run the CLI entry point end-to-end against a running retriever
+run:
+    uv run python -m eval_retriever.main
